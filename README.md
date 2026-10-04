@@ -98,6 +98,11 @@ GPUS="0 1 2 3" ABLATE=ICEWS18 ./run_all.sh
 python collect.py
 ```
 
+Training runs on one GPU per process. `--gpu N` picks the card and
+`--gpu -1` takes the one with the most free memory. `--device cuda` refuses
+to start without CUDA instead of falling back to CPU. bf16 autocast is on by
+default on the GPU; `--no_amp` turns it off.
+
 Ablations: `--no_type` (stream keeps times, loses relation types),
 `--no_stream` (statistics only), `--no_dyad`, `--no_pop`, `--no_struct`.
 

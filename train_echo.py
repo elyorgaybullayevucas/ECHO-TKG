@@ -41,6 +41,41 @@ HDR = (f"{'Ep':>4} | {'Time':>7} | {'Loss':>8} | {'MRR':>7} {'H@1':>7} "
 STRATA = ("cold", "dyad_only", "blocked", "clean")
 
 
+AMP = False          # set in main(): bf16 autocast when the device supports it
+
+
+def amp(dev):
+    return autocast(dev.type, dtype=torch.bfloat16, enabled=AMP)
+
+
+def pick_device(cfg):
+    """
+    --device auto  CUDA when present, otherwise CPU with a loud warning
+    --device cuda  CUDA or an error: never fall back silently on a server
+    --gpu -1       the GPU with the most free memory right now
+    """
+    if cfg.device == "cpu":
+        return torch.device("cpu")
+    if not torch.cuda.is_available():
+        if cfg.device == "cuda":
+            raise SystemExit(
+                "CUDA was requested but torch.cuda.is_available() is False. "
+                "Check `nvidia-smi` and that this torch build has CUDA: "
+                f"torch {torch.__version__}, built for CUDA "
+                f"{torch.version.cuda}.")
+        bar = "!" * 70
+        print(bar, "!! NO GPU VISIBLE -- running on CPU, which is far too "
+              "slow for real runs.", bar, sep="\n", flush=True)
+        return torch.device("cpu")
+    n = torch.cuda.device_count()
+    if cfg.gpu < 0:
+        free = [torch.cuda.mem_get_info(i)[0] for i in range(n)]
+        cfg.gpu = max(range(n), key=free.__getitem__)
+    if cfg.gpu >= n:
+        raise SystemExit(f"--gpu {cfg.gpu} but only {n} GPU(s) are visible")
+    return torch.device(f"cuda:{cfg.gpu}")
+
+
 def set_seed(s):
     random.seed(s); np.random.seed(s); torch.manual_seed(s)
     if torch.cuda.is_available():
@@ -104,6 +139,7 @@ def loader(ds, cfg, shuffle):
     return DataLoader(ds, batch_size=1, shuffle=shuffle,
                       num_workers=cfg.num_workers,
                       collate_fn=identity_collate,
+                      pin_memory=torch.cuda.is_available(),
                       prefetch_factor=4 if cfg.num_workers > 0 else None)
 
 
@@ -145,13 +181,12 @@ def evaluate(model, data, split, dev, cfg, stratify=False):
     model.eval()
     M = Meters(tuple(cfg.hits_at))
     ds = data.valid_set if split == "valid" else data.test_set
-    amp = dev.type == "cuda"
     for raw in loader(ds, cfg, False):
         it = to_dev(raw, dev)
-        with autocast("cuda", dtype=torch.bfloat16, enabled=amp):
+        with amp(dev):
             E, P, row = context(model, it, cfg)
         for a, b in chunks(it["sup_mask"], cfg):
-            with autocast("cuda", dtype=torch.bfloat16, enabled=amp):
+            with amp(dev):
                 lg = run_chunk(model, it, E, P, row, a, b).float()
             objs = it["objs"][a:b]
             tgt = lg.gather(1, objs.view(-1, 1))
@@ -176,11 +211,19 @@ def main():
     cfg = parse_args()
     variant = variant_of(cfg)
     set_seed(cfg.seed)
-    cuda = cfg.device != "cpu" and torch.cuda.is_available()
-    dev = torch.device(f"cuda:{cfg.gpu}" if cuda else "cpu")
+    global AMP
+    dev = pick_device(cfg)
+    cuda = dev.type == "cuda"
     if cuda:
         torch.backends.cuda.matmul.allow_tf32 = True
         torch.backends.cudnn.allow_tf32 = True
+        AMP = not cfg.no_amp and torch.cuda.is_bf16_supported()
+        free, tot = torch.cuda.mem_get_info(dev)
+        print(f"[GPU {cfg.gpu}] {torch.cuda.get_device_name(dev)}  "
+              f"{free/2**30:.1f}/{tot/2**30:.1f} GB free  "
+              f"bf16 autocast={'on' if AMP else 'off'}")
+    elif cfg.force_amp:
+        AMP = True                      # exercises the autocast path on CPU
 
     print(f"ECHO | dataset={cfg.dataset} variant={variant} "
           f"tag={cfg.tag or '-'} seed={cfg.seed} device={dev}")
@@ -224,14 +267,14 @@ def main():
             # dL/dE and dL/dP accumulate in the detached copies; one more
             # backward carries them through the evolver and the popularity
             # head. Same gradient, memory bounded by a single chunk.
-            with autocast("cuda", dtype=torch.bfloat16, enabled=cuda):
+            with amp(dev):
                 E, P, row = context(model, it, cfg)
             E_d = E.detach().requires_grad_(True)
             P_d = None if P is None else P.detach().requires_grad_(True)
 
             n, loss_t = it["subs"].numel(), 0.0
             for a, b in chunks(it["sup_mask"], cfg):
-                with autocast("cuda", dtype=torch.bfloat16, enabled=cuda):
+                with amp(dev):
                     lg, ls = run_chunk(model, it, E_d, P_d, row, a, b, True)
                     obj = it["objs"][a:b]
                     lc = F.cross_entropy(lg, obj,

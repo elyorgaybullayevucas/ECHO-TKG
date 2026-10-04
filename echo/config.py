@@ -62,11 +62,13 @@ class EchoConfig:
     no_pop: bool = False        # no popularity field
     no_struct: bool = False     # no structural branch
     eval_only: bool = False
+    no_amp: bool = False        # full precision on the GPU
+    force_amp: bool = False     # testing only: bf16 autocast on CPU
     num_workers: int = -1
     hits_at: Tuple = (1, 3, 10)
     seed: int = 42
     device: str = "auto"
-    gpu: int = 0
+    gpu: int = 0                # -1 = the GPU with the most free memory
     tag: str = ""
     save_dir: str = "checkpoints"
     log_dir: str = "logs"

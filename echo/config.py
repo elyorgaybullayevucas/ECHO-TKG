@@ -8,6 +8,7 @@ _C = dict(
     embed_dim=200, gcn_layers=2, conv_channels=50, hist_len=10,
     stream_dim=64, stream_layers=2, stream_heads=4, stream_len=10,
     dyad_support=96, triple_support=64, horizon=0,
+    path_support=16, path_dim=32,
     pop_dim=16, dropout=0.2, bias_init=-2.0, struct_aux=0.3,
     lr=1e-3, weight_decay=1e-5, grad_clip=1.0, label_smoothing=0.1,
     warmup_ratio=0.05, epochs=40, patience=8,
@@ -40,6 +41,8 @@ class EchoConfig:
     stream_len: int = 10
     dyad_support: int = 96
     triple_support: int = 64
+    path_support: int = 16      # second-hop edges per first-hop candidate
+    path_dim: int = 32
     horizon: int = 0            # snapshots of history the supports may use; 0 = all
     pop_dim: int = 16
     dropout: float = 0.2
@@ -59,6 +62,8 @@ class EchoConfig:
     no_stream: bool = False     # dyad branch sees the 8 statistics only
     no_type: bool = False       # stream keeps times, loses relation types
     no_dyad: bool = False       # no dyad branch at all
+    no_path: bool = False       # no two-hop path intensity
+    no_compete: bool = False    # candidates scored independently
     no_pop: bool = False        # no popularity field
     no_struct: bool = False     # no structural branch
     eval_only: bool = False

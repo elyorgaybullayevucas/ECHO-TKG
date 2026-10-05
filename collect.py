@@ -7,9 +7,11 @@ runs = defaultdict(list)
 for p in sorted(glob.glob(os.path.join("checkpoints", "*_results.json"))):
     r = json.load(open(p))
     runs[(r["dataset"], r["variant"])].append(r)
-rows = ("time_aware_filtered", "cold", "dyad_only", "blocked", "clean")
+rows = ("time_aware_filtered", "cold_far", "cold_2hop", "dyad_only",
+        "blocked", "clean")
 for (ds, var), rs in sorted(runs.items()):
-    print(f"\n{ds} [{var}]  seeds={sorted(r['seed'] for r in rs)}")
+    print(f"\n{ds} [{var}]  seeds={sorted(r['seed'] for r in rs)}  "
+          f"valid MRR {st.mean(100 * r['valid_mrr'] for r in rs):.2f}")
     print(f"  {'':<22} {'MRR':>13} {'H@1':>13} {'H@3':>13} {'H@10':>13}")
     for k in rows:
         if not all(k in r["test"] for r in rs):

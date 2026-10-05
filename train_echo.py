@@ -5,14 +5,17 @@ ECHO -- training and evaluation.
     python train_echo.py --dataset ICEWS18 --gpu 0
     python train_echo.py --dataset YAGO    --gpu 1 --seed 2 --tag s2
 
-Ablations: --no_type  --no_stream  --no_dyad  --no_pop  --no_struct
+Ablations: --no_path  --no_compete  --no_type  --no_stream  --no_dyad
+           --no_pop  --no_struct
 
 Protocol. Model selection is on validation MRR, time-aware filtered. The test
 table reports raw and time-aware filtered, with ties resolved to their
 AVERAGE rank (an optimistic tie rule inflates any model that gives many
 entities the same score). Test metrics are also split by stratum:
 
-    cold       the answer is outside the support: s and o never interacted
+    cold_far   the answer is outside the support and not within two hops
+    cold_2hop  outside the support, but a partner of one of the candidates:
+               the path intensity can reach it
     dyad_only  s and o interacted, but never under (s, r)
     blocked    (s, r, o) occurred, but a distractor is both more recent and
                more frequent, so no monotone copy score can rank it first
@@ -37,8 +40,10 @@ from echo.data import EchoData, identity_collate
 from echo.model import Echo
 
 HDR = (f"{'Ep':>4} | {'Time':>7} | {'Loss':>8} | {'MRR':>7} {'H@1':>7} "
-       f"{'H@3':>7} {'H@10':>7} | {'dyadB':>6} {'popB':>6} | {'LR':>8}")
-STRATA = ("cold", "dyad_only", "blocked", "clean")
+       f"{'H@3':>7} {'H@10':>7} | {'dyadB':>6} {'pathB':>6} {'popB':>6} | "
+       f"{'LR':>8}")
+STRATA = ("cold_far", "cold_2hop", "dyad_only", "blocked", "clean")
+EDGE_KEYS = ("e_dst", "e_rel", "e_dt", "e_cnt", "e_mask")
 
 
 AMP = False          # set in main(): bf16 autocast when the device supports it
@@ -83,8 +88,9 @@ def set_seed(s):
 
 
 def variant_of(cfg):
-    off = [k[3:] for k in ("no_struct", "no_pop", "no_dyad", "no_stream",
-                           "no_type") if getattr(cfg, k)]
+    off = [k[3:] for k in ("no_struct", "no_pop", "no_dyad", "no_path",
+                           "no_compete", "no_stream", "no_type")
+           if getattr(cfg, k)]
     return "full" if not off else "no-" + "-".join(off)
 
 
@@ -95,7 +101,10 @@ def ranks_of(scores, tgt):
     return 1.0 + better.float() + tied.clamp(min=0).float() / 2.0
 
 
-def strata(stat, mask, ids, objs):
+def strata(stat, mask, ids, objs, sup_v, edges):
+    # is the answer the target of an edge leaving one of the candidates?
+    hop2 = ((edges["e_dst"][sup_v] == objs.view(-1, 1, 1))
+            & edges["e_mask"][sup_v] & mask.unsqueeze(-1)).flatten(1).any(1)
     is_ans = (ids == objs.view(-1, 1)) & mask
     has = stat[..., 3] > 0
     in_sup = is_ans.any(1)
@@ -107,9 +116,10 @@ def strata(stat, mask, ids, objs):
     dom = (has & mask & ~is_ans & (dt <= a_dt.unsqueeze(1))
            & (cnt >= a_ct.unsqueeze(1))).any(1)
     out = torch.zeros(objs.numel(), dtype=torch.long, device=objs.device)
-    out[in_sup & ~rec] = 1
-    out[rec & dom] = 2
-    out[rec & ~dom] = 3
+    out[~in_sup & hop2] = 1
+    out[in_sup & ~rec] = 2
+    out[rec & dom] = 3
+    out[rec & ~dom] = 4
     return out
 
 
@@ -173,6 +183,8 @@ def run_chunk(model, it, E, P, row, a, b, return_struct=False):
                  it["subs"][a:b], it["rels"][a:b], it["sup_ids"][a:b],
                  it["sup_stat"][a:b], it["sup_mask"][a:b],
                  it["tok_r"][a:b], it["tok_d"][a:b],
+                 sup_v=it["sup_v"][a:b],
+                 edges={k: it[k] for k in EDGE_KEYS},
                  return_struct=return_struct)
 
 
@@ -200,7 +212,8 @@ def evaluate(model, data, split, dev, cfg, stratify=False):
             M.add("time_aware_filtered", r)
             if stratify:
                 g = strata(it["sup_stat"][a:b], it["sup_mask"][a:b],
-                           it["sup_ids"][a:b], objs)
+                           it["sup_ids"][a:b], objs, it["sup_v"][a:b],
+                           {k: it[k] for k in EDGE_KEYS})
                 for code, nm in enumerate(STRATA):
                     if (g == code).any():
                         M.add(nm, r[g == code])
@@ -229,7 +242,8 @@ def main():
           f"tag={cfg.tag or '-'} seed={cfg.seed} device={dev}")
     print(f"  d={cfg.embed_dim} H={cfg.hist_len} stream: L={cfg.stream_len} "
           f"dim={cfg.stream_dim} layers={cfg.stream_layers} | support: "
-          f"dyad={cfg.dyad_support} triple={cfg.triple_support}")
+          f"dyad={cfg.dyad_support} triple={cfg.triple_support} "
+          f"path={cfg.path_support}")
 
     data = EchoData(cfg)
     model = Echo(data.num_entities, data.num_relations, cfg,
@@ -308,7 +322,9 @@ def main():
         print(f"{'*' if is_best else ' '}{ep:>3} | {time.time()-t0:>6.1f}s | "
               f"{tot/max(nb,1):>8.4f} | {m['MRR']:>7.4f} {m['Hits@1']:>7.4f} "
               f"{m['Hits@3']:>7.4f} {m['Hits@10']:>7.4f} | "
-              f"{model.dyad_bias.item():>6.2f} {model.pop_bias.item():>6.2f} | "
+              f"{model.dyad_bias.item():>6.2f} "
+              f"{model.path_bias.item():>6.2f} "
+              f"{model.pop_bias.item():>6.2f} | "
               f"{sched.get_last_lr()[0]:>8.2e}", flush=True)
         with open(log_path, "a") as f:
             f.write(json.dumps({"epoch": ep, "loss": tot / max(nb, 1),

@@ -18,6 +18,8 @@ and for every candidate
     stat    eight summary statistics of the (s, r, o) and (s, ., o) histories
     stream  the last L events on the dyad (s, o), each a (relation, elapsed
             time) pair, most recent first
+    edges   its own P2 most recent (relation, object) pairs, which are the
+            second hop of the path intensity
 
 The stream is what is new here. It is independent of the query relation, it
 keeps the TYPE of every past event, and it is the input of the dyadic
@@ -90,34 +92,83 @@ def _groups(sorted_key):
     return first, np.r_[first[1:], len(sorted_key)]
 
 
+def _events(ix, ents, t, horizon):
+    """Events of the sorted entity list `ents` strictly before t, flattened.
+    Returns (owner index into ents, object, relation, time); time-ordered
+    inside each owner."""
+    T = ix.T
+    t0 = max(t - horizon, 0) if horizon > 0 else 0
+    lo = np.searchsorted(ix.gk, ents * T + t0)
+    hi = np.searchsorted(ix.gk, ents * T + t)
+    lens = hi - lo
+    tot = int(lens.sum())
+    off = np.cumsum(lens) - lens
+    rows = np.repeat(lo - off, lens) + np.arange(tot)
+    return (np.repeat(np.arange(len(ents)), lens), ix.eo[rows], ix.er[rows],
+            ix.et[rows])
+
+
+def build_edges(ix, t, ents, P2, horizon=0):
+    """
+    Second-hop edges. For every entity x in the sorted list `ents`, its P2
+    most recent distinct (relation, object) pairs before t:
+
+        e_dst (n, P2) int64    e_rel (n, P2) int16    e_dt (n, P2) int32
+        e_cnt (n, P2) float32  log1p of how often the pair occurred
+        e_mask (n, P2) bool
+    """
+    N, R2 = ix.N, ix.R2
+    n = max(len(ents), 1)
+    out = dict(e_dst=np.zeros((n, P2), np.int64),
+               e_rel=np.zeros((n, P2), np.int16),
+               e_dt=np.zeros((n, P2), np.int32),
+               e_cnt=np.zeros((n, P2), np.float32),
+               e_mask=np.zeros((n, P2), bool))
+    if len(ents) == 0:
+        return out
+    su, eo, er, et = _events(ix, ents, t, horizon)
+    if len(su) == 0:
+        return out
+    tk = (su * R2 + er) * N + eo
+    ot = np.argsort(tk, kind="stable")
+    tk_s, tt_s = tk[ot], et[ot]
+    first, end = _groups(tk_s)
+    key, cnt, last = tk_s[first], end - first, tt_s[end - 1]
+    own = key // (R2 * N)
+    o3 = np.lexsort((-last, own))
+    v_first = np.searchsorted(own[o3], np.arange(len(ents)))
+    v_n = np.bincount(own, minlength=len(ents))
+    j = np.arange(P2)[None, :]
+    m = j < np.minimum(v_n, P2)[:, None]
+    g = o3[np.where(m, v_first[:, None] + j, 0)]
+    out["e_mask"] = m
+    out["e_dst"] = np.where(m, key[g] % N, 0)
+    out["e_rel"] = np.where(m, (key[g] // N) % R2, 0).astype(np.int16)
+    out["e_dt"] = np.where(m, t - last[g], 0).astype(np.int32)
+    out["e_cnt"] = np.where(m, np.log1p(cnt[g]), 0).astype(np.float32)
+    return out
+
+
 def build_support(ix, t, subs, rels, S1, S2, L, horizon=0):
     """
     Supports, statistics and dyad streams for all queries (subs, rels) at
-    time index t. Returns numpy arrays
+    time index t. Returns a dict of numpy arrays
 
         ids   (B, S) int64      stat (B, S, N_STAT) float32
         mask  (B, S) bool       tok_r (B, S, L) int16   (R2 = padding)
                                 tok_d (B, S, L) int32   elapsed snapshots
     """
-    N, R2, T = ix.N, ix.R2, ix.T
+    N, R2 = ix.N, ix.R2
     B = len(subs)
     U, inv = np.unique(subs, return_inverse=True)
-    t0 = max(t - horizon, 0) if horizon > 0 else 0
-    lo = np.searchsorted(ix.gk, U * T + t0)
-    hi = np.searchsorted(ix.gk, U * T + t)                # strictly before t
-    lens = hi - lo
-    tot = int(lens.sum())
+    su, eo, er, et = _events(ix, U, t, horizon)
+    tot = len(su)
     if tot == 0:
-        return (np.zeros((B, 1), np.int64),
-                np.zeros((B, 1, N_STAT), np.float32),
-                np.zeros((B, 1), bool),
-                np.full((B, 1, L), R2, np.int16),
-                np.zeros((B, 1, L), np.int32))
-
-    off = np.cumsum(lens) - lens
-    rows = np.repeat(lo - off, lens) + np.arange(tot)
-    su = np.repeat(np.arange(len(U)), lens)
-    eo, er, et = ix.eo[rows], ix.er[rows], ix.et[rows]
+        return dict(ids=np.zeros((B, 1), np.int64),
+                    stat=np.zeros((B, 1, N_STAT), np.float32),
+                    mask=np.zeros((B, 1), bool),
+                    tok_r=np.full((B, 1, L), R2, np.int16),
+                    tok_d=np.zeros((B, 1, L), np.int32))
 
     # ── dyads (subject, object): events stay time-ordered inside a dyad ─────
     dk = su * N + eo
@@ -200,7 +251,7 @@ def build_support(ix, t, subs, rels, S1, S2, L, horizon=0):
     pos = np.where(ok, pos, 0)
     tok_r = np.where(ok, dr_s[pos], R2).astype(np.int16)
     tok_d = np.where(ok, t - dt_s[pos], 0).astype(np.int32)
-    return ids, stat, mask, tok_r, tok_d
+    return dict(ids=ids, stat=stat, mask=mask, tok_r=tok_r, tok_d=tok_d)
 
 
 class SnapshotSet(Dataset):
@@ -223,13 +274,21 @@ class SnapshotSet(Dataset):
         t = int(self.times[i])
         blk = self.q[self.starts[i]:self.ends[i]]
         subs, rels, objs = blk[:, 0], blk[:, 1], blk[:, 2]
-        ids, stat, mask, tok_r, tok_d = build_support(
-            self.ix, t, subs, rels, c.dyad_support, c.triple_support,
-            c.stream_len, c.horizon)
+        sup = build_support(self.ix, t, subs, rels, c.dyad_support,
+                            c.triple_support, c.stream_len, c.horizon)
+        # second hop: the outgoing edges of every first-hop candidate
+        V = np.unique(sup["ids"][sup["mask"]])
+        edges = build_edges(self.ix, t, V, c.path_support, c.horizon)
+        sup_v = np.searchsorted(V, sup["ids"]) if len(V) else \
+            np.zeros_like(sup["ids"])
+        sup_v = np.where(sup["mask"], sup_v, 0)
         f = torch.from_numpy
-        return dict(t=t, subs=f(subs), rels=f(rels), objs=f(objs),
-                    sup_ids=f(ids), sup_stat=f(stat), sup_mask=f(mask),
-                    tok_r=f(tok_r), tok_d=f(tok_d))
+        out = dict(t=t, subs=f(subs), rels=f(rels), objs=f(objs),
+                   sup_ids=f(sup["ids"]), sup_stat=f(sup["stat"]),
+                   sup_mask=f(sup["mask"]), tok_r=f(sup["tok_r"]),
+                   tok_d=f(sup["tok_d"]), sup_v=f(sup_v))
+        out.update({k: f(np.ascontiguousarray(v)) for k, v in edges.items()})
+        return out
 
 
 def identity_collate(batch):

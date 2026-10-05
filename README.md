@@ -56,30 +56,46 @@ Two things this measurement does **not** show, stated so nobody over-reads it:
 
 ## The model
 
-Three intensities over the candidate entities, added as intensities
+Four intensities over the candidate entities, added as intensities
 (`logaddexp`), with no gate between them:
 
 ```
 lambda(o) = lambda_struct(o | G_<t, s, r)      every entity
           + lambda_pop(o | r, t)               every entity
           + lambda_dyad(o | stream_so, s, r)   the support of s
+          + lambda_path(o | s -> x -> o, r)    two hops from s
 ```
 
-- **`lambda_dyad` is the contribution.** The last `L` events on the dyad are
-  tokens `(relation, elapsed time)`. The query relation is prepended as a
-  read-out token and a two-layer Transformer encodes the sequence. One
-  mechanism covers recurrence, cross-relation excitation (temporal rules),
-  reciprocity and order effects. Time enters as sinusoids of log elapsed
-  time, so the intensity is not confined to decay monotonically.
+- **`lambda_dyad`.** The last `L` events on the dyad are tokens
+  `(relation, elapsed time)`. The query relation is prepended as a read-out
+  token and a two-layer Transformer encodes the sequence. One mechanism
+  covers recurrence, cross-relation excitation (temporal rules), reciprocity
+  and order effects. Time enters as sinusoids of log elapsed time, so the
+  intensity is not confined to decay monotonically.
+- **Competition.** One attention layer runs across the candidates of a
+  query, so a candidate's intensity can depend on the other candidates'
+  streams. A scorer that looks at one candidate at a time cannot express
+  "the answer rotates among these partners".
+- **`lambda_path`.** Each first-hop candidate `x` forwards its
+  query-conditioned state along its own most recent typed edges `(x, r2, o)`.
+  Messages arriving at `o` are summed into a path intensity. A path is the
+  composition of a full event stream with a typed, timed edge.
 - **`lambda_pop`** is a learned function of multi-scale decayed counts of
   `(r, o)` and of `o`, for all entities, with no top-k cut.
 - **`lambda_struct`** is snapshot evolution with a ConvTransE decoder. It is
   prior work (RE-GCN, DiMNet) and is only the backbone.
 
+Why the path intensity: `diagnose_paths.py` on ICEWS18 finds that 54 % of
+cold answers are a partner of one of the subject's 96 most recent partners,
+inside a set of about 555 entities, which is 2.4 % of all entities. A
+hand-built path counter combined with popularity reaches MRR 4.51 on the
+cold stratum against 2.86 for popularity alone.
+
 Relation to prior work: the type-to-type counter above is close to the
-length-1 rules of TLogic and to the rule confidences of CountTRuCoLa. ECHO
-replaces independent rule confidences with a sequence model over the dyad's
-events and superposes it with a structural encoder.
+length-1 rules of TLogic and to the rule confidences of CountTRuCoLa, and
+the path intensity to their length-2 rules. LogCL and HisRES reach the
+subject's wider history with a query-specific global graph. ECHO reads the
+same evidence as event streams and composes them along paths.
 
 ## Run
 
@@ -87,6 +103,7 @@ events and superposes it with a structural encoder.
 ./get_data.sh
 python verify.py --dataset ICEWS14s
 python diagnose_dyad.py --dataset ICEWS18
+python diagnose_paths.py --dataset ICEWS18
 python train_echo.py --dataset ICEWS18 --gpu 0
 ```
 
@@ -103,8 +120,9 @@ Training runs on one GPU per process. `--gpu N` picks the card and
 to start without CUDA instead of falling back to CPU. bf16 autocast is on by
 default on the GPU; `--no_amp` turns it off.
 
-Ablations: `--no_type` (stream keeps times, loses relation types),
-`--no_stream` (statistics only), `--no_dyad`, `--no_pop`, `--no_struct`.
+Ablations: `--no_path`, `--no_compete`, `--no_type` (stream keeps times,
+loses relation types), `--no_stream` (statistics only), `--no_dyad`,
+`--no_pop`, `--no_struct`.
 
 `verify.py` checks that deleting every event at or after `t` changes nothing
 the model reads at `t`, and compares the vectorised support builder with a
@@ -119,15 +137,18 @@ test timestamp is the true history, which is the RE-GCN setting.
 
 ## Status
 
-No trained result is claimed yet. What has been checked so far:
+Measured so far, ICEWS18, time-aware filtered, one seed (42):
 
-- `verify.py` passes on ICEWS14s: no leakage, and the support builder agrees
-  with brute force on 4,645 candidates.
-- The full pipeline trains and evaluates end to end on CPU.
-- The diagnostic numbers above are measured.
+| version | MRR | H@1 | H@3 | H@10 |
+|---|---|---|---|---|
+| ECHO without path and competition | 35.80 | 25.70 | 40.40 | 55.38 |
 
-GPU runs with three seeds per dataset are the next step. A margin over the
-published numbers is only a result once it holds across seeds.
+That run scored MRR 4.31 on the cold stratum (31.7 % of queries) and H@1
+16.11 on the blocked stratum (25.7 %). The path intensity and the
+competition layer were added for those two strata and have **not** been
+trained on a GPU yet. `--no_path --no_compete` reproduces the run above.
+
+No claim over published numbers is made until three seeds are in.
 
 Data is not tracked in git. Put each dataset in `data/<NAME>/` with
 `train.txt`, `valid.txt` and `test.txt`, or run `./get_data.sh`.

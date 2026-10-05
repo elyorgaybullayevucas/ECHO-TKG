@@ -18,7 +18,7 @@ import numpy as np
 import torch
 
 from echo.config import DATASETS, EchoConfig
-from echo.data import EchoData, EchoIndex, build_support
+from echo.data import EchoData, EchoIndex, build_edges, build_support
 from echo.model import Echo
 
 
@@ -39,11 +39,18 @@ def main():
     subs, rels = blk[:, 0], blk[:, 1]
 
     # ── 1. leakage ───────────────────────────────────────────────────────────
+    P2 = cfg.path_support
     full = build_support(ix, t, subs, rels, S1, S2, L)
     past = D.ev[D.ev[:, 3] < t]
-    cut = build_support(EchoIndex(past, N, R2, D.T), t, subs, rels, S1, S2, L)
-    for name, x, y in zip(("ids", "stat", "mask", "tok_r", "tok_d"), full, cut):
-        assert np.array_equal(x, y), f"support leaks through {name}"
+    ix_cut = EchoIndex(past, N, R2, D.T)
+    cut = build_support(ix_cut, t, subs, rels, S1, S2, L)
+    for name in full:
+        assert np.array_equal(full[name], cut[name]),             f"support leaks through {name}"
+    V = np.unique(full["ids"][full["mask"]])
+    edges = build_edges(ix, t, V, P2)
+    e_cut = build_edges(ix_cut, t, V, P2)
+    for name in edges:
+        assert np.array_equal(edges[name], e_cut[name]),             f"second-hop edges leak through {name}"
 
     m_full = Echo(N, D.num_relations, cfg, D.ev, D.t_ptr)
     tp = np.searchsorted(past[:, 3], np.arange(D.T + 1))
@@ -57,7 +64,8 @@ def main():
           f"{len(D.ev) - len(past):,} future events removed, nothing changed")
 
     # ── 2. brute force ───────────────────────────────────────────────────────
-    ids, stat, mask, tok_r, tok_d = full
+    ids, stat, mask, tok_r, tok_d = (full[k] for k in
+                                     ("ids", "stat", "mask", "tok_r", "tok_d"))
     rng = np.random.default_rng(0)
     n_c = 0
     for j in rng.choice(len(subs), min(80, len(subs)), replace=False):
@@ -89,6 +97,29 @@ def main():
             n_c += 1
     print(f"[ok] brute force: {n_c:,} candidates agree on membership, "
           f"statistics and streams")
+
+    n_e = 0
+    for i in rng.choice(len(V), min(60, len(V)), replace=False):
+        x = int(V[i])
+        px = past[past[:, 0] == x]
+        ref = {}
+        for _, r2, o2, tt in px:
+            c, last = ref.get((int(r2), int(o2)), (0, -1))
+            ref[(int(r2), int(o2))] = (c + 1, max(last, int(tt)))
+        m = edges["e_mask"][i]
+        got = list(zip(edges["e_rel"][i][m].tolist(),
+                       edges["e_dst"][i][m].tolist()))
+        assert len(set(got)) == len(got) == min(P2, len(ref)), "edge count"
+        for (r2, o2), dt, cn in zip(got, edges["e_dt"][i][m],
+                                    edges["e_cnt"][i][m]):
+            c, last = ref[(r2, o2)]
+            assert dt == t - last and np.isclose(cn, np.log1p(c)), "edge stat"
+        kept = min(ref[g][1] for g in got) if got else 0
+        dropped = [v[1] for g, v in ref.items() if g not in set(got)]
+        assert not dropped or max(dropped) <= kept, "not the most recent"
+        n_e += len(got)
+    print(f"[ok] brute force: {n_e:,} second-hop edges agree on target, "
+          f"relation, recency and count")
 
 
 if __name__ == "__main__":

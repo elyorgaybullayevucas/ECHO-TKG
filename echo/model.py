@@ -20,12 +20,13 @@ So the unit that carries the signal is not the triple. It is the DYAD: the
 ordered pair (s, o) and the stream of typed, timestamped events on it.
 
 ================================== THE MODEL ================================
-A query (s, r, ?, t) is a draw from a superposition of three marked point
+A query (s, r, ?, t) is a draw from a superposition of four marked point
 processes, combined by logaddexp (adding intensities), never by a gate:
 
     lambda(o) = lambda_struct(o | G_<t, s, r)        every entity
               + lambda_pop   (o | r, t)              every entity
               + lambda_dyad  (o | stream_so, s, r)   the support of s
+              + lambda_path  (o | s -> x -> o, r)    two hops from s
 
 lambda_dyad  -- the contribution. For a candidate o the last L events on the
     dyad (s, o) are a sequence of (relation, elapsed time) tokens. The query
@@ -40,6 +41,27 @@ lambda_dyad  -- the contribution. For a candidate o the last L events on the
     decay. Summary statistics of the full history are concatenated so that
     truncating the stream to L events loses no count.
 
+competition  -- candidates of one query are not scored independently. After
+    each candidate is encoded, one attention layer runs ACROSS the support,
+    so the intensity of a candidate can depend on what the other candidates'
+    streams look like. A query whose answer rotates among a few partners, or
+    moves to whichever partner has gone quiet, cannot be expressed by any
+    scorer that looks at one candidate at a time. The blocked stratum is
+    exactly that case: the answer is in the support and something else in
+    the support dominates it.
+
+lambda_path  -- excitation does not stop at the dyad. A dyad-only model is
+    silent whenever s and o never interacted (the cold stratum, a quarter to
+    a third of ICEWS queries); diagnose_paths.py shows 54 % of those answers
+    on ICEWS18 are partners of one of the subject's recent partners, inside a
+    set of about 555 entities. Each first-hop candidate x therefore forwards
+    its query-conditioned state along its own most recent typed edges
+    (x, r2, o), and the messages arriving at o are summed into a path
+    intensity. The first-hop state is the dyadic encoding of (s, x), so a
+    path is the composition of a full event stream with a typed, timed edge:
+    a differentiable form of the length-2 temporal rule, with the rule body
+    read from the stream rather than from a single past fact.
+
 lambda_pop   -- a learned function of multi-scale decayed counts of (r, o)
     and of o, evaluated for ALL entities. It is the relaxed-recurrency signal
     without a top-k cut, and it is what lets a candidate outside the support
@@ -51,7 +73,8 @@ lambda_struct -- snapshot evolution (R-GCN with a cross-time link, a GRU over
 
 Ablations (train_echo.py): --no_type blanks the relation of every stream
 token and keeps its time; --no_stream removes the stream and keeps the
-statistics; --no_dyad, --no_pop and --no_struct remove a whole intensity.
+statistics; --no_compete scores candidates independently; --no_path,
+--no_dyad, --no_pop and --no_struct remove a whole intensity.
 """
 import math
 import torch
@@ -270,6 +293,27 @@ class Echo(nn.Module):
         nn.init.zeros_(self.dyad_out.bias)
         self.dyad_bias = nn.Parameter(torch.tensor(cfg.bias_init))
 
+        # competition across the candidates of one query
+        self.compete = None if cfg.no_compete else Block(
+            2 * ds, cfg.stream_heads, cfg.dropout)
+
+        # two-hop path intensity
+        k = cfg.path_dim
+        self.p_src = nn.Linear(2 * ds, k)
+        self.p_rel = nn.Embedding(self.R2, k)
+        self.p_time = TimeEncoding(k)
+        self.p_cnt = nn.Linear(1, k)
+        self.p_edge = nn.Sequential(nn.LayerNorm(k), nn.GELU(),
+                                    nn.Linear(k, k))
+        self.p_norm = nn.LayerNorm(k)
+        self.p_trunk = nn.Sequential(
+            nn.Linear(k + 1 + 3 * ds, 2 * ds), nn.LayerNorm(2 * ds),
+            nn.GELU(), nn.Dropout(cfg.dropout))
+        self.p_out = nn.Linear(2 * ds, 1)
+        nn.init.normal_(self.p_out.weight, std=0.02)
+        nn.init.zeros_(self.p_out.bias)
+        self.path_bias = nn.Parameter(torch.tensor(cfg.bias_init))
+
     # ── per-timestamp context: computed once, shared by every query chunk ───
 
     def history(self, t):
@@ -316,37 +360,79 @@ class Echo(nn.Module):
     # ── forward over one chunk of queries ────────────────────────────────────
 
     def forward(self, E, pop, subs, rels, sup_ids, sup_stat, sup_mask,
-                tok_r, tok_d, return_struct=False):
+                tok_r, tok_d, sup_v=None, edges=None, return_struct=False):
         """
-        E    (N, d)   evolved entity states for this timestamp
-        pop  (B, N)   log lambda_pop rows for these queries, or None
+        E      (N, d)   evolved entity states for this timestamp
+        pop    (B, N)   log lambda_pop rows for these queries, or None
+        sup_v  (B, S)   row of each candidate in the edge table
+        edges  dict     e_dst / e_rel / e_dt / e_cnt / e_mask, (V, P2) each
         Returns log-intensities over all N entities, (B, N) float32.
         """
+        cfg = self.cfg
         B = subs.numel()
-        if self.cfg.no_struct:
+        if cfg.no_struct:
             f_struct = self.ent_bias.float().unsqueeze(0).expand(B, -1)
         else:
             f_struct = self.decoder(E[subs], self.rel_emb(rels), E,
                                     self.ent_bias).float()
         out = f_struct if pop is None else torch.logaddexp(f_struct,
                                                            pop.float())
+        rows, slots = sup_mask.nonzero(as_tuple=True)
+        if cfg.no_dyad or rows.numel() == 0:
+            return (out, f_struct) if return_struct else out
 
-        if not self.cfg.no_dyad:
-            rows, slots = sup_mask.nonzero(as_tuple=True)
-            if rows.numel():
-                ids = sup_ids[rows, slots]
-                h_s = E[subs]
-                if self.cfg.no_stream:
-                    z = E.new_zeros(rows.numel(), self.cfg.stream_dim)
-                else:
-                    z = self.stream(rels[rows], h_s[rows],
-                                    tok_r[rows, slots], tok_d[rows, slots])
+        # ── first hop: one state per (query, candidate) ─────────────────────
+        ids = sup_ids[rows, slots]
+        h_s = E[subs]
+        if cfg.no_stream:
+            z = E.new_zeros(rows.numel(), cfg.stream_dim)
+        else:
+            z = self.stream(rels[rows], h_s[rows],
+                            tok_r[rows, slots], tok_d[rows, slots])
+        q_sub = self.c_sub(h_s).to(z.dtype)
+        q_rel = self.c_rel(self.rel_emb(rels)).to(z.dtype)
+        h = self.trunk(torch.cat([
+            z, self.stat_norm(sup_stat[rows, slots]).to(z.dtype),
+            self.c_ent(E[ids]).to(z.dtype), q_sub[rows], q_rel[rows]], -1))
+
+        # ── competition across the support of each query ────────────────────
+        if self.compete is not None:
+            pad = h.new_zeros(B, sup_mask.size(1), h.size(-1))
+            pad[rows, slots] = h
+            # a query with an empty support must still attend to something
+            keep = sup_mask | ~sup_mask.any(1, keepdim=True)
+            h = self.compete(pad, keep)[rows, slots].to(h.dtype)
+
+        f = self.dyad_out(h).squeeze(-1) + self.dyad_bias
+        out = out.index_put((rows, ids),
+                            torch.logaddexp(out[rows, ids], f.float()))
+
+        # ── second hop: forward each state along the candidate's own edges ──
+        if not cfg.no_path and edges is not None:
+            vi = sup_v[rows, slots]
+            pr, pj = edges["e_mask"][vi].nonzero(as_tuple=True)
+            v = vi[pr]
+            dst, qb = edges["e_dst"][v, pj], rows[pr]
+            ok = dst != subs[qb]                   # not back to the subject
+            pr, pj, v, dst, qb = pr[ok], pj[ok], v[ok], dst[ok], qb[ok]
+            if pr.numel():
+                edge = self.p_edge(
+                    self.p_rel(edges["e_rel"][v, pj].long())
+                    + self.p_time(edges["e_dt"][v, pj])
+                    + self.p_cnt(edges["e_cnt"][v, pj].unsqueeze(-1)))
+                msg = self.p_src(h)[pr] * edge.to(h.dtype)
+                key, inv = torch.unique(qb * self.N + dst,
+                                        return_inverse=True)
+                m = msg.new_zeros(key.numel(), msg.size(1)).index_add_(
+                    0, inv, msg)
+                n = msg.new_zeros(key.numel()).index_add_(
+                    0, inv, torch.ones_like(msg[:, 0]))
+                ub, uo = key // self.N, key % self.N
                 x = torch.cat([
-                    z, self.stat_norm(sup_stat[rows, slots]).to(z.dtype),
-                    self.c_ent(E[ids]).to(z.dtype),
-                    self.c_sub(h_s)[rows].to(z.dtype),
-                    self.c_rel(self.rel_emb(rels))[rows].to(z.dtype)], -1)
-                f = self.dyad_out(self.trunk(x)).squeeze(-1) + self.dyad_bias
-                merged = torch.logaddexp(out[rows, ids], f.float())
-                out = out.index_put((rows, ids), merged)
+                    self.p_norm(m / n.unsqueeze(1).sqrt()).to(h.dtype),
+                    torch.log1p(n).unsqueeze(1).to(h.dtype),
+                    self.c_ent(E[uo]).to(h.dtype), q_sub[ub], q_rel[ub]], -1)
+                fp = self.p_out(self.p_trunk(x)).squeeze(-1) + self.path_bias
+                out = out.index_put((ub, uo),
+                                    torch.logaddexp(out[ub, uo], fp.float()))
         return (out, f_struct) if return_struct else out

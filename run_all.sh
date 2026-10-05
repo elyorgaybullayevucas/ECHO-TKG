@@ -11,9 +11,10 @@ mkdir -p logs checkpoints
 read -ra G <<< "${GPUS:?set GPUS, e.g. GPUS=\"0 1\"}"
 jobs=()
 if [[ -n "${ABLATE:-}" ]]; then
-  for flag in no_type no_stream no_dyad no_pop no_struct; do
+  for flag in no_path no_compete no_type no_stream no_dyad no_pop no_struct; do
     jobs+=("--dataset $ABLATE --seed 1 --tag s1 --$flag")
   done
+  jobs+=("--dataset $ABLATE --seed 1 --tag s1 --no_path --no_compete")
 else
   for ds in ${DATASETS:-ICEWS18 YAGO WIKI GDELT}; do
     for seed in 1 2 3; do jobs+=("--dataset $ds --seed $seed --tag s$seed"); done

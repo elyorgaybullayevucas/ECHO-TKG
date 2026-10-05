@@ -139,14 +139,19 @@ test timestamp is the true history, which is the RE-GCN setting.
 
 Measured so far, ICEWS18, time-aware filtered, one seed (42):
 
-| version | MRR | H@1 | H@3 | H@10 |
+| variant | MRR | H@1 | H@3 | H@10 |
 |---|---|---|---|---|
-| ECHO without path and competition | 35.80 | 25.70 | 40.40 | 55.38 |
+| full | 36.27 | 26.14 | 40.93 | 55.90 |
+| without competition | 36.26 | 26.02 | 40.94 | 56.05 |
+| without the path intensity | 35.84 | 25.88 | 40.47 | 55.03 |
 
-That run scored MRR 4.31 on the cold stratum (31.7 % of queries) and H@1
-16.11 on the blocked stratum (25.7 %). The path intensity and the
-competition layer were added for those two strata and have **not** been
-trained on a GPU yet. `--no_path --no_compete` reproduces the run above.
+The path intensity is worth +0.43 MRR and lands where it was aimed: on
+`cold_2hop` (14 % of queries) MRR goes from 6.21 to 8.52 and H@10 from 13.43
+to 19.04. The competition layer is a null result on one seed: +1.2 MRR on
+`clean`, -1.5 on `dyad_only`, nothing overall.
+
+Every run peaked at epoch 8 to 12 of 40 with the learning rate still near
+its maximum. `run_sweep.sh` tests the training recipe for that reason.
 
 No claim over published numbers is made until three seeds are in.
 

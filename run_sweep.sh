@@ -19,6 +19,9 @@ set -euo pipefail
 cd "$(dirname "$0")"
 export OMP_NUM_THREADS="${OMP_NUM_THREADS:-8}" MKL_NUM_THREADS="${MKL_NUM_THREADS:-8}"
 mkdir -p logs checkpoints
+# tmux starts a fresh shell that may not have the conda env active, so pin
+# the interpreter that is active right now.
+PY="$(command -v python)"
 DS="${DATASET:-ICEWS18}"
 PER_GPU="${PER_GPU:-1}"
 read -ra G <<< "${GPUS:?set GPUS, e.g. GPUS=\"5\"}"
@@ -43,7 +46,7 @@ declare -A chain
 for i in "${!jobs[@]}"; do
   q=$((i % ${#queues[@]}))
   tag="${jobs[$i]%%|*}"; args="${jobs[$i]#*|}"
-  chain[$q]+="python -u train_echo.py $BASE $args --tag $tag --device cuda --gpu ${queues[$q]} 2>&1 | tee logs/sweep_${DS}_${tag}.out; "
+  chain[$q]+="$PY -u train_echo.py $BASE $args --tag $tag --device cuda --gpu ${queues[$q]} 2>&1 | tee logs/sweep_${DS}_${tag}.out; "
 done
 for q in "${!queues[@]}"; do
   [[ -n "${chain[$q]:-}" ]] || continue

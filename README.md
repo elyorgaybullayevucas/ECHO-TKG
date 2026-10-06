@@ -85,6 +85,9 @@ lambda(o) = lambda_struct(o | G_<t, s, r)      every entity
   query vector from the prototype, the subject and the relation is scored
   against every entity. It reaches entities that resemble past answers
   without being connected to them, which the path cannot.
+- **Candidate context.** A candidate's own most recent typed edges, the
+  table the path already uses, are pooled into one vector and fed to the
+  dyadic trunk: what the candidate has been doing with anyone.
 - **`lambda_pop`** is a learned function of multi-scale decayed counts of
   `(r, o)` and of `o`, for all entities, with no top-k cut.
 - **`lambda_struct`** is snapshot evolution with a ConvTransE decoder. It is
@@ -125,7 +128,7 @@ Training runs on one GPU per process. `--gpu N` picks the card and
 to start without CUDA instead of falling back to CPU. bf16 autocast is on by
 default on the GPU; `--no_amp` turns it off.
 
-Ablations: `--no_path`, `--no_proto`, `--compete`, `--no_type` (stream keeps times,
+Ablations: `--no_path`, `--no_proto`, `--no_ctx`, `--compete`, `--no_type` (stream keeps times,
 loses relation types), `--no_stream` (statistics only), `--no_dyad`,
 `--no_pop`, `--no_struct`.
 
@@ -142,23 +145,32 @@ test timestamp is the true history, which is the RE-GCN setting.
 
 ## Status
 
-Measured so far, ICEWS18, time-aware filtered, one seed (42):
+ICEWS18, time-aware filtered, seed 42 unless stated. Published numbers are
+the papers' own; LogCL was re-run in this protocol by the authors of this
+repository and lands at about 36.0.
 
 | variant | MRR | H@1 | H@3 | H@10 |
 |---|---|---|---|---|
-| full | 36.27 | 26.14 | 40.93 | 55.90 |
-| without competition | 36.26 | 26.02 | 40.94 | 56.05 |
-| without the path intensity | 35.84 | 25.88 | 40.47 | 55.03 |
+| dyad + pop + struct | 35.80 | 25.70 | 40.40 | 55.38 |
+| + path | 36.26 | 26.02 | 40.94 | 56.05 |
+| + path, seeds 1-3 | 36.3 ± 0.1 | | | |
+| + path + competition | 36.27 | 26.14 | 40.93 | 55.90 |
+| + path + prototype | 36.25 | 26.08 | 40.91 | 55.88 |
+| structural branch alone | 30.27 | 20.54 | 33.95 | 49.59 |
 
-The path intensity is worth +0.43 MRR and lands where it was aimed: on
-`cold_2hop` (14 % of queries) MRR goes from 6.21 to 8.52 and H@10 from 13.43
-to 19.04. The competition layer is a null result on one seed: +1.2 MRR on
-`clean`, -1.5 on `dyad_only`, nothing overall.
+Ten training recipes (schedule, dropout, weight decay, learning rate,
+auxiliary weight) all land between 36.0 and 36.3 and all peak at epoch
+8-10: the plateau is not a regularisation problem. The path intensity is
+the one addition that moved the number, and it moved it where it was aimed
+(cold_2hop MRR 6.21 to 8.52). Competition and prototype are null results.
 
-Every run peaked at epoch 8 to 12 of 40 with the learning rate still near
-its maximum. `run_sweep.sh` tests the training recipe for that reason.
+| dataset | seeds | MRR | H@1 | H@3 | H@10 | best published |
+|---|---|---|---|---|---|---|
+| YAGO | 3 | 91.21 ± 0.23 | 89.54 | 92.75 | 93.00 | DaeMon 91.59 / 90.03 |
+| WIKI | 1 | 83.34 | 80.41 | 85.93 | 87.36 | CognTKE 83.21, DaeMon 82.38 / 78.26 |
 
-No claim over published numbers is made until three seeds are in.
+The candidate-context input and the longer YAGO/WIKI stream are the next
+thing to run; neither has been trained yet.
 
 Data is not tracked in git. Put each dataset in `data/<NAME>/` with
 `train.txt`, `valid.txt` and `test.txt`, or run `./get_data.sh`.

@@ -20,10 +20,12 @@ DATASETS = {
     "ICEWS18": dict(_C, dropout=0.25),
     "GDELT":   dict(_C, hist_len=5, dropout=0.25, epochs=20, patience=6,
                     dyad_support=64, triple_support=48, stream_len=8),
+    # YAGO / WIKI: facts persist for years, so the question is whether a
+    # fact is still running, and a longer stream sees the whole run.
     "YAGO":    dict(_C, dropout=0.15, struct_aux=0.0, dyad_support=48,
-                    stream_len=8),
+                    stream_len=16, label_smoothing=0.05),
     "WIKI":    dict(_C, dropout=0.15, struct_aux=0.0, dyad_support=48,
-                    stream_len=8),
+                    stream_len=16, label_smoothing=0.05),
 }
 
 
@@ -64,6 +66,7 @@ class EchoConfig:
     no_dyad: bool = False       # no dyad branch at all
     no_path: bool = False       # no two-hop path intensity
     no_proto: bool = False      # no prototype intensity over all entities
+    no_ctx: bool = False        # no candidate-activity context in the trunk
     compete: bool = False       # attention across the candidates of a query
                                 # (a null result on ICEWS18; kept for ablation)
     no_pop: bool = False        # no popularity field

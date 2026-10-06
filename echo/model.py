@@ -72,6 +72,13 @@ lambda_proto -- the path reaches what the subject's partners reach; it does
     history graphs of LogCL and HisRES, with the attention read from the
     streams instead of from a second GNN.
 
+context      -- a candidate is also described by what IT has been doing with
+    anyone: its most recent typed edges, the same table the path uses,
+    pooled into one vector and fed to the dyadic trunk. On YAGO and WIKI this
+    is whether the entity is still active at all; on ICEWS it is the
+    candidate's current engagement profile. The global graphs of LogCL and
+    HisRES supply this through message passing; here it is read directly.
+
 lambda_pop   -- a learned function of multi-scale decayed counts of (r, o)
     and of o, evaluated for ALL entities. It is the relaxed-recurrency signal
     without a top-k cut, and it is what lets a candidate outside the support
@@ -295,7 +302,7 @@ class Echo(nn.Module):
         self.c_sub = nn.Linear(d, ds)
         self.c_rel = nn.Linear(d, ds)
         self.trunk = nn.Sequential(
-            nn.Linear(4 * ds + N_STAT, 2 * ds), nn.LayerNorm(2 * ds),
+            nn.Linear(5 * ds + N_STAT, 2 * ds), nn.LayerNorm(2 * ds),
             nn.GELU(), nn.Dropout(cfg.dropout),
             nn.Linear(2 * ds, 2 * ds), nn.LayerNorm(2 * ds), nn.GELU())
         self.dyad_out = nn.Linear(2 * ds, 1)
@@ -323,6 +330,13 @@ class Echo(nn.Module):
         nn.init.normal_(self.p_out.weight, std=0.02)
         nn.init.zeros_(self.p_out.bias)
         self.path_bias = nn.Parameter(torch.tensor(cfg.bias_init))
+
+        # candidate activity context: what o has been doing with anyone
+        self.x_rel = nn.Embedding(self.R2, k)
+        self.x_time = TimeEncoding(k)
+        self.x_cnt = nn.Linear(1, k)
+        self.x_enc = nn.Sequential(nn.LayerNorm(k), nn.GELU(), nn.Linear(k, k))
+        self.x_out = nn.Sequential(nn.LayerNorm(k), nn.Linear(k, ds))
 
         # prototype intensity
         self.proto_att = nn.Linear(2 * ds, 1)
@@ -409,9 +423,22 @@ class Echo(nn.Module):
                             tok_r[rows, slots], tok_d[rows, slots])
         q_sub = self.c_sub(h_s).to(z.dtype)
         q_rel = self.c_rel(self.rel_emb(rels)).to(z.dtype)
+        if cfg.no_ctx or edges is None:
+            ctx = z.new_zeros(rows.numel(), cfg.stream_dim)
+        else:
+            # one vector per candidate from its own most recent typed edges;
+            # computed once per distinct entity in the edge table
+            em = edges["e_mask"]
+            x = self.x_enc(self.x_rel(edges["e_rel"].long())
+                           + self.x_time(edges["e_dt"])
+                           + self.x_cnt(edges["e_cnt"].unsqueeze(-1)))
+            x = (x * em.unsqueeze(-1).to(x.dtype)).sum(1) \
+                / em.sum(1, keepdim=True).clamp(min=1).to(x.dtype)
+            ctx = self.x_out(x)[sup_v[rows, slots]].to(z.dtype)
         h = self.trunk(torch.cat([
             z, self.stat_norm(sup_stat[rows, slots]).to(z.dtype),
-            self.c_ent(E[ids]).to(z.dtype), q_sub[rows], q_rel[rows]], -1))
+            self.c_ent(E[ids]).to(z.dtype), ctx, q_sub[rows], q_rel[rows]],
+            -1))
 
         # ── competition across the support of each query ────────────────────
         if self.compete is not None:

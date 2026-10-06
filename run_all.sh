@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Three seeds of the full model per dataset, one tmux session per GPU.
 #   GPUS="0 1 2 3" ./run_all.sh
+#   GPUS="2 2 1" ./run_all.sh          # two queues on GPU 2, one on GPU 1
 #   GPUS="0 1" DATASETS="ICEWS18 YAGO" ./run_all.sh
 # Then the ablations on one dataset:
 #   GPUS="0 1 2 3" ABLATE=ICEWS18 ./run_all.sh
@@ -23,15 +24,17 @@ else
     for seed in 1 2 3; do jobs+=("--dataset $ds --seed $seed --tag s$seed"); done
   done
 fi
+# Each entry of GPUS is one queue; the same card may appear twice to run two
+# queues on it. Jobs are dealt round-robin over the queues.
 declare -A chain
 for i in "${!jobs[@]}"; do
-  g="${G[$((i % ${#G[@]}))]}"
+  q=$((i % ${#G[@]}))
   name=$(echo "${jobs[$i]}" | tr -s ' -' '_')
-  chain[$g]+="$PY -u train_echo.py ${jobs[$i]} --gpu $g 2>&1 | tee logs/run${name}.out; "
+  chain[$q]+="$PY -u train_echo.py ${jobs[$i]} --gpu ${G[$q]} 2>&1 | tee logs/run${name}.out; "
 done
-for g in "${G[@]}"; do
-  [[ -n "${chain[$g]:-}" ]] || continue
-  tmux new -d -s "echo_gpu$g" "cd $(pwd) && ${chain[$g]}"
-  echo "GPU $g: started tmux session echo_gpu$g"
+for q in "${!G[@]}"; do
+  [[ -n "${chain[$q]:-}" ]] || continue
+  tmux new -d -s "echo_q${q}_gpu${G[$q]}" "cd $(pwd) && ${chain[$q]}"
+  echo "queue $q on GPU ${G[$q]}: tmux session echo_q${q}_gpu${G[$q]}"
 done
 echo "results: python collect.py"

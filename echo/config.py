@@ -63,6 +63,7 @@ class EchoConfig:
     no_type: bool = False       # stream keeps times, loses relation types
     no_dyad: bool = False       # no dyad branch at all
     no_path: bool = False       # no two-hop path intensity
+    no_proto: bool = False      # no prototype intensity over all entities
     compete: bool = False       # attention across the candidates of a query
                                 # (a null result on ICEWS18; kept for ablation)
     no_pop: bool = False        # no popularity field

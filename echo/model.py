@@ -62,6 +62,16 @@ lambda_path  -- excitation does not stop at the dyad. A dyad-only model is
     a differentiable form of the length-2 temporal rule, with the rule body
     read from the stream rather than from a single past fact.
 
+lambda_proto -- the path reaches what the subject's partners reach; it does
+    not reach an entity that merely RESEMBLES the answers seen before. The
+    cold_far stratum (18 % of ICEWS18, MRR 1.6) is exactly that case. The
+    support states weight the candidates' entity vectors into one prototype
+    of "the kind of object this query has had", and a query vector built
+    from the prototype, the subject and the relation is scored against every
+    entity by inner product. It is the all-entity counterpart of the global
+    history graphs of LogCL and HisRES, with the attention read from the
+    streams instead of from a second GNN.
+
 lambda_pop   -- a learned function of multi-scale decayed counts of (r, o)
     and of o, evaluated for ALL entities. It is the relaxed-recurrency signal
     without a top-k cut, and it is what lets a candidate outside the support
@@ -74,7 +84,7 @@ lambda_struct -- snapshot evolution (R-GCN with a cross-time link, a GRU over
 Ablations (train_echo.py): --no_type blanks the relation of every stream
 token and keeps its time; --no_stream removes the stream and keeps the
 statistics; --compete adds attention across candidates; --no_path,
---no_dyad, --no_pop and --no_struct remove a whole intensity.
+--no_proto, --no_dyad, --no_pop and --no_struct remove a whole intensity.
 """
 import math
 import torch
@@ -314,6 +324,14 @@ class Echo(nn.Module):
         nn.init.zeros_(self.p_out.bias)
         self.path_bias = nn.Parameter(torch.tensor(cfg.bias_init))
 
+        # prototype intensity
+        self.proto_att = nn.Linear(2 * ds, 1)
+        self.proto_q = nn.Sequential(
+            nn.Linear(3 * d, d), nn.LayerNorm(d), nn.GELU(),
+            nn.Dropout(cfg.dropout), nn.Linear(d, d))
+        self.proto_scale = nn.Parameter(torch.tensor(1.0 / math.sqrt(d)))
+        self.proto_bias = nn.Parameter(torch.tensor(cfg.bias_init))
+
     # ── per-timestamp context: computed once, shared by every query chunk ───
 
     def history(self, t):
@@ -406,6 +424,22 @@ class Echo(nn.Module):
         f = self.dyad_out(h).squeeze(-1) + self.dyad_bias
         out = out.index_put((rows, ids),
                             torch.logaddexp(out[rows, ids], f.float()))
+
+        # ── prototype: "like the ones before", scored over ALL entities ─────
+        if not cfg.no_proto:
+            att = self.proto_att(h).squeeze(-1).float()
+            rmax = att.new_full((B,), float("-inf")).scatter_reduce(
+                0, rows, att, "amax")
+            w = torch.exp(att - rmax[rows])        # softmax within each row
+            den = w.new_zeros(B).index_add_(0, rows, w)
+            w = w / den[rows].clamp(min=1e-12)
+            proto = E.new_zeros(B, E.size(1)).index_add_(
+                0, rows, (E[ids].float() * w.unsqueeze(1)).to(E.dtype))
+            has = (den > 0).unsqueeze(1).to(E.dtype)
+            qp = self.proto_q(torch.cat(
+                [proto * has, h_s, self.rel_emb(rels).to(E.dtype)], -1))
+            fq = (qp @ E.T).float() * self.proto_scale + self.proto_bias
+            out = torch.logaddexp(out, fq)
 
         # ── second hop: forward each state along the candidate's own edges ──
         if not cfg.no_path and edges is not None:

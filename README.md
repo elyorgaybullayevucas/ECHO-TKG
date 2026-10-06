@@ -80,6 +80,11 @@ lambda(o) = lambda_struct(o | G_<t, s, r)      every entity
   query-conditioned state along its own most recent typed edges `(x, r2, o)`.
   Messages arriving at `o` are summed into a path intensity. A path is the
   composition of a full event stream with a typed, timed edge.
+- **`lambda_proto`.** The support states weight the candidates' entity
+  vectors into a prototype of "the kind of object this query has had"; a
+  query vector from the prototype, the subject and the relation is scored
+  against every entity. It reaches entities that resemble past answers
+  without being connected to them, which the path cannot.
 - **`lambda_pop`** is a learned function of multi-scale decayed counts of
   `(r, o)` and of `o`, for all entities, with no top-k cut.
 - **`lambda_struct`** is snapshot evolution with a ConvTransE decoder. It is
@@ -120,7 +125,7 @@ Training runs on one GPU per process. `--gpu N` picks the card and
 to start without CUDA instead of falling back to CPU. bf16 autocast is on by
 default on the GPU; `--no_amp` turns it off.
 
-Ablations: `--no_path`, `--no_compete`, `--no_type` (stream keeps times,
+Ablations: `--no_path`, `--no_proto`, `--compete`, `--no_type` (stream keeps times,
 loses relation types), `--no_stream` (statistics only), `--no_dyad`,
 `--no_pop`, `--no_struct`.
 

@@ -73,7 +73,7 @@ lambda_struct -- snapshot evolution (R-GCN with a cross-time link, a GRU over
 
 Ablations (train_echo.py): --no_type blanks the relation of every stream
 token and keeps its time; --no_stream removes the stream and keeps the
-statistics; --no_compete scores candidates independently; --no_path,
+statistics; --compete adds attention across candidates; --no_path,
 --no_dyad, --no_pop and --no_struct remove a whole intensity.
 """
 import math
@@ -294,8 +294,8 @@ class Echo(nn.Module):
         self.dyad_bias = nn.Parameter(torch.tensor(cfg.bias_init))
 
         # competition across the candidates of one query
-        self.compete = None if cfg.no_compete else Block(
-            2 * ds, cfg.stream_heads, cfg.dropout)
+        self.compete = Block(
+            2 * ds, cfg.stream_heads, cfg.dropout) if cfg.compete else None
 
         # two-hop path intensity
         k = cfg.path_dim

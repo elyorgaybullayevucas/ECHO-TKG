@@ -25,7 +25,7 @@ PY="$(command -v python)"
 DS="${DATASET:-ICEWS18}"
 PER_GPU="${PER_GPU:-1}"
 read -ra G <<< "${GPUS:?set GPUS, e.g. GPUS=\"5\"}"
-BASE="--dataset $DS --seed 42 --no_compete"
+BASE="--dataset $DS --seed 42"
 
 jobs=(
   "e16|--epochs 16"

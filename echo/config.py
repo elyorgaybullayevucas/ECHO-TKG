@@ -10,15 +10,15 @@ _C = dict(
     dyad_support=96, triple_support=64, horizon=0,
     path_support=16, path_dim=32,
     pop_dim=16, dropout=0.2, bias_init=-2.0, struct_aux=0.3,
-    lr=1e-3, weight_decay=1e-5, grad_clip=1.0, label_smoothing=0.1,
-    warmup_ratio=0.05, epochs=40, patience=8,
+    lr=1e-3, weight_decay=1e-3, grad_clip=1.0, label_smoothing=0.1,
+    warmup_ratio=0.05, epochs=20, patience=6,
     query_chunk=1024, cand_budget=60000,
 )
 
 DATASETS = {
     "ICEWS14s": dict(_C, dropout=0.25),
     "ICEWS18": dict(_C, dropout=0.25),
-    "GDELT":   dict(_C, hist_len=5, dropout=0.25, epochs=30, patience=6,
+    "GDELT":   dict(_C, hist_len=5, dropout=0.25, epochs=20, patience=6,
                     dyad_support=64, triple_support=48, stream_len=8),
     "YAGO":    dict(_C, dropout=0.15, struct_aux=0.0, dyad_support=48,
                     stream_len=8),
@@ -49,12 +49,12 @@ class EchoConfig:
     bias_init: float = -2.0
     struct_aux: float = 0.3
     lr: float = 1e-3
-    weight_decay: float = 1e-5
+    weight_decay: float = 1e-3
     grad_clip: float = 1.0
     label_smoothing: float = 0.1
     warmup_ratio: float = 0.05
-    epochs: int = 40
-    patience: int = 8
+    epochs: int = 20
+    patience: int = 6
     query_chunk: int = 1024
     cand_budget: int = 60000    # max (query, candidate) pairs per chunk
     max_snapshots: int = 0      # debugging: train on this many timestamps
@@ -63,7 +63,8 @@ class EchoConfig:
     no_type: bool = False       # stream keeps times, loses relation types
     no_dyad: bool = False       # no dyad branch at all
     no_path: bool = False       # no two-hop path intensity
-    no_compete: bool = False    # candidates scored independently
+    compete: bool = False       # attention across the candidates of a query
+                                # (a null result on ICEWS18; kept for ablation)
     no_pop: bool = False        # no popularity field
     no_struct: bool = False     # no structural branch
     eval_only: bool = False

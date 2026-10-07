@@ -5,8 +5,12 @@ opt-in carry variant "full+compete" (now "full") or "full" (now
 "no-compete"). Rewrites the variant field AND renames the file so that new
 runs cannot overwrite the old ones.
 """
-import glob, json, os
-ren = {"full+compete": "full", "full": "no-compete"}
+import glob, json, os, sys
+# Idempotent: once any "no-compete" result exists the relabel has been
+# applied, and the "full" files are already the competition runs.
+if glob.glob("checkpoints/*_no-compete_*_results.json"):
+    print("already relabelled; nothing to do")
+    sys.exit(0)
 # rename "full" first would collide with "full+compete" -> "full"; so handle
 # the "full" files first, then the "full+compete" files.
 for old, new in (("full", "no-compete"), ("full+compete", "full")):

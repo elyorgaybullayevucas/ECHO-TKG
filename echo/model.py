@@ -90,7 +90,7 @@ lambda_struct -- snapshot evolution (R-GCN with a cross-time link, a GRU over
 
 Ablations (train_echo.py): --no_type blanks the relation of every stream
 token and keeps its time; --no_stream removes the stream and keeps the
-statistics; --compete adds attention across candidates; --no_path,
+statistics; --no_compete scores candidates independently; --no_path,
 --no_proto, --no_dyad, --no_pop and --no_struct remove a whole intensity.
 """
 import math

@@ -6,7 +6,7 @@ ECHO -- training and evaluation.
     python train_echo.py --dataset YAGO    --gpu 1 --seed 2 --tag s2
 
 Ablations: --no_path  --no_proto  --no_ctx  --no_type  --no_stream  --no_dyad
-           --no_pop  --no_struct   (+ --compete to add candidate attention)
+           --no_pop  --no_struct  --no_compete
 
 Protocol. Model selection is on validation MRR, time-aware filtered. The test
 table reports raw and time-aware filtered, with ties resolved to their
@@ -90,8 +90,9 @@ def set_seed(s):
 def variant_of(cfg):
     off = [k[3:] for k in ("no_struct", "no_pop", "no_dyad", "no_path", "no_proto", "no_ctx",
                            "no_stream", "no_type") if getattr(cfg, k)]
-    name = "full" if not off else "no-" + "-".join(off)
-    return name + ("+compete" if cfg.compete else "")
+    if not cfg.compete:
+        off.append("compete")
+    return "full" if not off else "no-" + "-".join(off)
 
 
 def ranks_of(scores, tgt):

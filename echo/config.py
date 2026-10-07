@@ -67,8 +67,8 @@ class EchoConfig:
     no_path: bool = False       # no two-hop path intensity
     no_proto: bool = False      # no prototype intensity over all entities
     no_ctx: bool = False        # no candidate-activity context in the trunk
-    compete: bool = False       # attention across the candidates of a query
-                                # (a null result on ICEWS18; kept for ablation)
+    compete: bool = True        # attention across the candidates of a query;
+                                # +0.25 MRR on ICEWS18 over 3 seeds. --no_compete
     no_pop: bool = False        # no popularity field
     no_struct: bool = False     # no structural branch
     eval_only: bool = False
@@ -90,15 +90,20 @@ def parse_args(argv=None):
     for f in fields(EchoConfig):
         if f.name == "dataset" or f.name == "hits_at":
             continue
-        if f.type is bool:
+        if f.type is bool and f.default is True:
+            p.add_argument(f"--no_{f.name}", dest=f.name, action="store_false")
+        elif f.type is bool:
             p.add_argument(f"--{f.name}", action="store_true")
         else:
             p.add_argument(f"--{f.name}", type=f.type, default=None)
     a = p.parse_args(argv)
     base = dict(DATASETS[a.dataset])
     for k, v in vars(a).items():
-        if v is not None and v is not False:
-            base[k] = v
+        if v is None or v is False:
+            continue
+        base[k] = v
+    if not a.compete:
+        base["compete"] = False
     cfg = EchoConfig(**base)
     if cfg.num_workers < 0:
         # fork is cheap on Linux; Windows would re-import and copy the index

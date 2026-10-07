@@ -143,34 +143,70 @@ filtered ranks. Ties resolve to their average rank. Time is the snapshot
 index, so one step is one snapshot on every dataset. The history before a
 test timestamp is the true history, which is the RE-GCN setting.
 
-## Status
+## Results
 
-ICEWS18, time-aware filtered, seed 42 unless stated. Published numbers are
-the papers' own; LogCL was re-run in this protocol by the authors of this
-repository and lands at about 36.0.
+Final code, three seeds (1, 2, 3), time-aware filtered, ties averaged, x100.
+Mean +- standard deviation over seeds. Published numbers are the papers'
+own; LogCL was re-run in this protocol by the authors of this repository
+and lands at about 36.0 on ICEWS18.
+
+| dataset | MRR | H@1 | H@3 | H@10 | strongest published (MRR / H@1) |
+|---|---|---|---|---|---|
+| YAGO | **91.82** +- 0.20 | **90.57** +- 0.44 | 92.91 | 93.23 | DaeMon 91.59 / 90.03 |
+| WIKI | **83.41** +- 0.12 | **80.44** +- 0.26 | **86.04** | 87.39 | CognTKE 83.21; DaeMon 82.38 / 78.26 |
+| GDELT | 27.01 +- 0.03 | **18.05** +- 0.03 | 29.81 | 44.60 | CID-TKG 27.41 / 17.76 (no code); HisRES 26.58 / 16.90 |
+| ICEWS18 | 36.29 +- 0.04 | 26.10 +- 0.04 | 40.96 | 56.06 | LogCL 35.67 (36.0 re-run); CID-TKG 38.88 (no code) |
+| ICEWS14s | 47.18 +- 0.04 | 37.19 +- 0.11 | 52.43 | 66.16 | LogCL 48.87; DiMNet 45.72 |
+
+What this does and does not say. On YAGO and WIKI ECHO is above every
+published number we found on MRR and H@1. On GDELT it has the best H@1 and
+is 0.4 MRR behind a preprint without code. On ICEWS18 and ICEWS14s it is
+above every model with released code that we could run in this protocol,
+and behind HisRES, CID-TKG and CHE-TKG, none of which has code.
+
+### Strata (ICEWS18, three seeds)
+
+| stratum | share | MRR | H@1 | H@10 |
+|---|---|---|---|---|
+| cold_far | 17.8 % | 1.84 | 0.64 | 3.18 |
+| cold_2hop | 14.0 % | 8.93 | 3.13 | 19.46 |
+| dyad_only | 19.2 % | 29.71 | 17.21 | 56.72 |
+| blocked | 25.7 % | 34.99 | 16.82 | 72.96 |
+| clean | 23.4 % | 85.64 | 76.65 | 99.02 |
+
+### Ablations, YAGO (seed 1; full model is the 3-seed mean)
+
+| variant | MRR | H@1 | delta MRR |
+|---|---|---|---|
+| full | 91.82 | 90.57 | |
+| no stream (statistics only) | 91.83 | 90.77 | 0.00 |
+| no relation types in the stream | 91.79 | 90.58 | -0.03 |
+| no popularity field | 91.81 | 90.66 | -0.01 |
+| no path intensity | 91.59 | 90.41 | -0.23 |
+| no candidate context | 91.61 | 90.31 | -0.21 |
+| no prototype | 91.54 | 90.21 | -0.28 |
+| no structural branch | 90.97 | 89.14 | -0.85 |
+| no dyad branch | 67.18 | 61.37 | -24.64 |
+
+On YAGO the eight dyad statistics carry the dyad branch on their own; the
+sequence encoder and the relation types add nothing there, as the
+diagnostic predicted (dyad_only is 0.1 % of YAGO). The dyad branch as a
+whole is worth 24.6 MRR. ICEWS18 ablations are running.
+
+### Earlier development runs (ICEWS18, seed 42)
 
 | variant | MRR | H@1 | H@3 | H@10 |
 |---|---|---|---|---|
 | dyad + pop + struct | 35.80 | 25.70 | 40.40 | 55.38 |
 | + path | 36.26 | 26.02 | 40.94 | 56.05 |
-| + path, seeds 1-3 | 36.3 ± 0.1 | | | |
-| + path + competition | 36.27 | 26.14 | 40.93 | 55.90 |
+| + path + competition (opt-in now) | 36.27 | 26.14 | 40.93 | 55.90 |
 | + path + prototype | 36.25 | 26.08 | 40.91 | 55.88 |
+| + path + prototype + context (final) | 36.32 | 26.14 | 40.95 | 56.14 |
 | structural branch alone | 30.27 | 20.54 | 33.95 | 49.59 |
 
 Ten training recipes (schedule, dropout, weight decay, learning rate,
-auxiliary weight) all land between 36.0 and 36.3 and all peak at epoch
-8-10: the plateau is not a regularisation problem. The path intensity is
-the one addition that moved the number, and it moved it where it was aimed
-(cold_2hop MRR 6.21 to 8.52). Competition and prototype are null results.
-
-| dataset | seeds | MRR | H@1 | H@3 | H@10 | best published |
-|---|---|---|---|---|---|---|
-| YAGO | 3 | 91.21 ± 0.23 | 89.54 | 92.75 | 93.00 | DaeMon 91.59 / 90.03 |
-| WIKI | 1 | 83.34 | 80.41 | 85.93 | 87.36 | CognTKE 83.21, DaeMon 82.38 / 78.26 |
-
-The candidate-context input and the longer YAGO/WIKI stream are the next
-thing to run; neither has been trained yet.
+auxiliary weight) all land between 36.0 and 36.3 on ICEWS18 and all peak at
+epoch 8-10: the plateau is not a regularisation problem.
 
 Data is not tracked in git. Put each dataset in `data/<NAME>/` with
 `train.txt`, `valid.txt` and `test.txt`, or run `./get_data.sh`.

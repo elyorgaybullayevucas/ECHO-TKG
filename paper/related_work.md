@@ -259,7 +259,7 @@ vs ECHO: the chain is (s, r); ours is the dyad (s, o) under every relation.
 
 ## 6. Diffusion models
 
-**DiffuTKG** — `cai2024diffutkg` — Cai, Liu, Gan et al. *Predicting the
+**DiffuTKG** — `cai2024diffutkg` — Cai, Liu, Gan, Li, Liu, Lin, Luo, Yang. *Predicting the
 Unpredictable: Uncertainty-Aware Reasoning over Temporal Knowledge Graphs via
 Diffusion Process.* ACL 2024 Findings.
 Mechanism: future-fact prediction as sequence denoising: Gaussian noise
@@ -268,7 +268,7 @@ and an uncertainty regulariser counters the bias towards frequent facts.
 Reported ICEWS18 35.65 / 25.19 (FreqDiff table) or 35.65 / 27.19 (NADEx
 table) — the two later papers disagree on its H@1.
 
-**NADEx** — `nadex2026` — *Negative-Aware Diffusion Process for Temporal
+**NADEx** — `nadex2026` — Gan, He, Cai, Lin, Zhou, Liu. *Negative-Aware Diffusion Process for Temporal
 Knowledge Graph Extrapolation.* EACL 2026 Findings. arXiv:2602.08815.
 Mechanism: subject-centric histories encoded as sequences; the query object
 is perturbed and reconstructed by a Transformer denoiser; batch-wise negative
@@ -276,7 +276,7 @@ prototypes enter the conditioning and a cosine-alignment term separates the
 denoised embedding from negatives. Reported ICEWS18 36.84 / 27.58 / 45.12 /
 60.58, GDELT 23.67 / 16.10. Code released.
 
-**FreqDiff** — `freqdiff2026` — *Denoising the Future: Context-Aware
+**FreqDiff** — `freqdiff2026` — Gan, He, Lin, Jiang, Wang, Liu. *Denoising the Future: Context-Aware
 Spectral Diffusion for Temporal Knowledge Graph Extrapolation.*
 arXiv:2608.20804 (2026, unrefereed).
 Mechanism: query-slot denoising with a dual-stream denoiser (temporal
@@ -305,13 +305,13 @@ information, reaches Hits@10 above 0.9 on standard datasets; the authors list
 dataset biases, over-simplified tasks, time-interval formatting and ignored
 obsolescence, and release four bias-corrected datasets and two new tasks.
 
-**Strikingness-Aware Evaluation** — `strikingness2026` —
+**Strikingness-Aware Evaluation** — `strikingness2026` — Huang, Zhang, Wei.
 arXiv:2605.13153 (2026, unrefereed).
 Finding: over 80 % of ICEWS test events recur from history; reweighting by
 event rarity drops path- and rule-based methods (Recurrency, TLogic, TITer)
 by 30–50 % and representation methods by under 30 %, LogCL the least.
 
-**Distribution Shifts** — `shift2026` — *Temporal Knowledge Graph
+**Distribution Shifts** — `shift2026` — Özdemir, Gastinger, Kirchdorfer, Stuckenschmidt. *Temporal Knowledge Graph
 Forecasting under Distribution Shifts: A Synthetic Evaluation.*
 arXiv:2607.09232 (2026, unrefereed).
 Finding: on a synthetic generator with recurrence, homophily and
@@ -323,17 +323,17 @@ clean) is the real-data counterpart of probing mechanisms separately.
 
 ## 8. Emerging entities and online adaptation (different settings)
 
-**TransFIR** — `transfir2026` — *Inductive Reasoning for Temporal Knowledge
+**TransFIR** — `transfir2026` — Zhao, He, Wu, Tang, Lu, Gan, Fu, Wang, Zhou. *Inductive Reasoning for Temporal Knowledge
 Graphs with Emerging Entities.* ICLR 2026. arXiv:2604.10164. Interaction-aware
 codebook for entities unseen in training. Evaluated in an emerging-entity
 split, not the standard one.
 
-**AdaTKG** — `adatkg2026` — *AdaTKG: Adaptive Memory for Temporal Knowledge
+**AdaTKG** — `adatkg2026` — Lee, Seo, Lee, Yoo, Kim, Lim, Kang, Choi, Lee, Ahn. *AdaTKG: Adaptive Memory for Temporal Knowledge
 Graph Reasoning.* arXiv:2605.07121 (2026). Per-entity memory updated by a
 learnable EMA with one shared scalar; gains of 4–24 % MRR on emerging
 entities. Code released.
 
-**HiTS-CL** — `hitscl2026` — *A Continual Learning Framework for
+**HiTS-CL** — `hitscl2026` — Liu, Liu, Zuo, Zhao, Fu, Zhang, Zhuang, Chen, Li. *A Continual Learning Framework for
 Long-Horizon Temporal Knowledge Graph Extrapolation.* arXiv:2609.36559
 (2026). Snapshot-by-snapshot continual fine-tuning with multi-teacher
 distillation; LogCL+HiTS-CL reaches ICEWS18 37.56 and GDELT 28.54 **under

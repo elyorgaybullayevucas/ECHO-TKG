@@ -1,0 +1,50 @@
+\section{What the Dyad Knows: A Data-Only Diagnostic}
+\label{sec:diag}
+
+Before any model is trained we ask two questions of the data. How large are the strata of \cref{def:strata}? And does reading the dyad instead of the triple carry ranking information? Both are answered with hand-built counters that share one time decay $w(\Delta) = e^{-0.3\Delta} + 0.2\,e^{-0.02\Delta} + 0.02$ (in snapshots) and read only events before the query time. No parameter is fitted to the test set; the one learned quantity, a relation-to-relation confidence, is counted on the training split.
+
+\begin{itemize}\setlength\itemsep{1pt}
+  \item \textbf{Recurrence} scores $o$ by $\sum w(\Delta)$ over past $(s, r, o)$ events. This is the copy family and the strict recurrency baseline of \cite{gastinger2024history}.
+  \item \textbf{Blind dyad} scores $o$ by $\sum w(\Delta)$ over every past event between $s$ and $o$, relation ignored.
+  \item \textbf{Typed dyad} weights each of those events by $\mathrm{conf}(\rho \to r)$, the training-split frequency with which a $\rho$-event on a dyad is followed by an $r$-event within seven steps. This is a length-one temporal rule in the sense of TLogic~\cite{liu2022tlogic}.
+  \item \textbf{Popularity} scores $o$ by $\sum w(\Delta)$ over all past $(\cdot, r, o)$ events, the relaxed recurrency of \cite{gastinger2024history}.
+  \item \textbf{Backoff} orders by recurrence, then the typed dyad, then popularity.
+\end{itemize}
+
+\begin{figure}[t]
+  \centering
+  \input{figures/fig_strata}
+  \caption{\textbf{Strata are a property of the data.} Share of test queries whose answer is recurrent (occurred with $(s, r)$ before), dyad-only (never with $(s, r)$, but $s$ and the answer interacted under another relation or direction) and cold (never interacted). A copy mechanism is silent on the dyad-only stratum by construction. It is a quarter of the ICEWS queries and absent from YAGO and WIKI.}
+  \label{fig:strata}
+\end{figure}
+
+\Cref{fig:strata} gives the first answer. On both ICEWS benchmarks about half of the test queries are recurrent, a quarter are dyad-only and a quarter are cold. On YAGO and WIKI the dyad-only stratum is 0.1\%: facts there persist for years and the pair's history is the triple's history. The diagnostic therefore makes a prediction before any model exists: a mechanism that reads the dyad should help on ICEWS and should not help on YAGO or WIKI. \Cref{sec:analysis} tests it.
+
+\begin{table}[t]
+  \centering\small
+  \caption{\textbf{Untrained counters.} Time-aware filtered, ties averaged, $\times 100$. ICEWS18 on a random sample of 30\,000 test queries, ICEWS14s on all. The only learned quantity is a relation-to-relation confidence counted on the training split. Published DaeMon on ICEWS18: 31.85 / 22.67 / 49.80~\cite{dong2025dimnet}; TLogic on ICEWS14: 43.04 / 33.56 / 61.23~\cite{liu2022tlogic}.}
+  \label{tab:diag}
+  \begin{tabular}{llrrr}
+    \toprule
+    dataset & counter & MRR & \hone{} & \hten{} \\
+    \midrule
+    \multirow{5}{*}{ICEWS18}
+      & recurrence  & 28.02 & 20.93 & 41.41 \\
+      & blind dyad  & 24.55 & 14.71 & 45.10 \\
+      & typed dyad  & 30.65 & 21.05 & 49.82 \\
+      & popularity  & 12.09 &  6.64 & 23.13 \\
+      & backoff     & \textbf{31.82} & \textbf{22.55} & \textbf{49.88} \\
+    \midrule
+    \multirow{5}{*}{ICEWS14s}
+      & recurrence  & 37.08 & 30.80 & 48.50 \\
+      & blind dyad  & 36.78 & 26.43 & 57.31 \\
+      & typed dyad  & 42.72 & 33.73 & 60.39 \\
+      & popularity  & 15.50 &  8.21 & 30.19 \\
+      & backoff     & \textbf{43.26} & \textbf{34.08} & \textbf{60.85} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\Cref{tab:diag} gives the second answer. Allowing the whole dyad to speak lifts the untrained score on ICEWS18 from MRR 28.0 to 31.8 and \hten{} from 41.4 to 49.9, and on ICEWS14s from 37.1 to 43.3. The ICEWS18 figure is the published level of DaeMon and the ICEWS14s figure that of TLogic, neither of which is a weak model. On the dyad-only stratum alone, where recurrence scores exactly zero, the blind dyad counter reaches \hone{} 9.5 and \hten{} 42.3 on ICEWS18 and \hten{} 61.8 on ICEWS14s.
+
+Two things the counters do \emph{not} show are worth stating, because the model is designed around them. First, on the dyad-only stratum the typed counter is no better than the blind one (ICEWS18 MRR 20.33 against 20.01): the gain of the dyad comes from reading the pair at all, and whether relation types carry more than an additive confidence can extract is left to a learned sequence model. Second, the cold stratum is reached by none of the counters. A further measurement (\texttt{diagnose\_paths.py}) shows that 54\% of cold answers on ICEWS18 are partners of one of the subject's 96 most recent partners, inside a set of about 555 entities, which is 2.4\% of the vocabulary; a hand-built two-hop path counter combined with popularity reaches MRR 4.5 on that stratum against 2.9 for popularity alone. The path intensity of \cref{sec:method} is built for those queries.

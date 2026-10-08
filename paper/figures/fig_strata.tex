@@ -1,0 +1,27 @@
+% Stacked horizontal bars: share of test queries per stratum.
+% Numbers from diagnose_dyad.py (ICEWS18 on 30k sampled test queries, the
+% other three on 20k or all).
+\begin{tikzpicture}
+  \begin{axis}[
+    xbar stacked, width=0.95\linewidth, height=3.6cm,
+    bar width=8pt, xmin=0, xmax=100,
+    xlabel={share of test queries (\%)}, xlabel style={font=\scriptsize},
+    symbolic y coords={WIKI,YAGO,ICEWS14s,ICEWS18},
+    ytick=data, y dir=reverse,
+    tick label style={font=\scriptsize},
+    enlarge y limits=0.25,
+    legend style={at={(0.5,1.02)}, anchor=south, legend columns=3,
+                  font=\scriptsize, draw=none, column sep=6pt},
+    nodes near coords, nodes near coords style={font=\tiny, color=white},
+    point meta=explicit symbolic,
+    axis line style={cGrey}, tick style={cGrey},
+  ]
+    \addplot[fill=cStruct!80, draw=none] coordinates {
+      (50.6,ICEWS18) [50.6] (52.4,ICEWS14s) [52.4] (92.7,YAGO) [92.7] (86.9,WIKI) [86.9]};
+    \addplot[fill=cDyad, draw=none] coordinates {
+      (23.4,ICEWS18) [23.4] (22.0,ICEWS14s) [22.0] (0.1,YAGO) [] (0.1,WIKI) []};
+    \addplot[fill=cGrey!70, draw=none] coordinates {
+      (26.0,ICEWS18) [26.0] (25.7,ICEWS14s) [25.7] (7.2,YAGO) [7.3] (13.0,WIKI) [13.0]};
+    \legend{recurrent, dyad-only, cold}
+  \end{axis}
+\end{tikzpicture}

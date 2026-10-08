@@ -1,0 +1,18 @@
+\section{Preliminaries}
+\label{sec:prelim}
+
+\paragraph{Task.}
+A temporal knowledge graph is a set of quadruples $\mathcal{G} = \{(s, r, o, t)\}$ over entities $\mathcal{E}$ ($|\mathcal{E}| = N$), relations $\mathcal{R}$ and discrete timestamps $t \in \{0, \dots, T-1\}$. We re-index time to the rank of the timestamp on the full timeline, so that one step is one snapshot on every dataset whatever the raw unit (a day on ICEWS, fifteen minutes on GDELT, a year on YAGO and WIKI). Following every method we compare with, each fact is augmented with its inverse $(o, r^{-1}, s, t)$, giving $2|\mathcal{R}|$ relation types, and a query is $(s, r, ?, t)$ with $r$ ranging over both directions. The model ranks all $N$ entities as the object using only facts with timestamp strictly less than $t$; at test time the true history before $t$ is available, which is the setting of RE-GCN and its successors~\cite{li2021regcn}.
+
+\paragraph{Protocol.}
+We report MRR and Hits@$k$ under the time-aware filter: for a query $(s, r, ?, t)$, the other true objects of $(s, r)$ \emph{at time $t$} are removed from the ranking and nothing else is. Ties are resolved to their average rank, $1 + \#\{\text{better}\} + (\#\{\text{tied}\} - 1)/2$. The optimistic rule that counts only strictly better scores credits a model with rank~1 whenever thousands of entities share the target's score, which a copy-style model produces by default; we found it inflates \hten{} on YAGO to 99.9 against a published ceiling of 93.3, and we do not use it. Model selection is on validation MRR; test is evaluated once with the selected checkpoint.
+
+\paragraph{Dyads and strata.}
+For a query $(s, r, ?, t)$ and a candidate $o$, the \emph{dyad stream} $\mathcal{D}_{so}(t)$ is the time-ordered sequence of all events $(\rho, \tau)$ with $\tau < t$ such that $(s, \rho, o, \tau) \in \mathcal{G}$, where $\rho$ ranges over both directions, so an event in which $o$ acted on $s$ appears with the inverse type. The \emph{triple history} is the sub-stream with $\rho = r$. These two sets induce a partition of the test queries that is defined from the data alone:
+
+\begin{definition}[Strata]
+\label{def:strata}
+A test query with answer $o^\star$ is \textbf{recurrent} if $(s, r, o^\star, \tau) \in \mathcal{G}$ for some $\tau < t$; \textbf{dyad-only} if it is not recurrent but $\mathcal{D}_{so^\star}(t)$ is non-empty; and \textbf{cold} otherwise. A recurrent query is further \textbf{blocked} if some $o' \neq o^\star$ with triple history is both at least as recent and at least as frequent as $o^\star$, and \textbf{clean} otherwise. A cold query is \textbf{cold-2hop} if $o^\star$ is a partner of one of the $P_1$ most recent partners of $s$, and \textbf{cold-far} otherwise.
+\end{definition}
+
+The blocked stratum is the set no scorer of the form $f(\text{count}) \cdot g(\Delta t)$ with $f$ non-decreasing and $g$ non-increasing can order correctly, whatever its parameters: the dominating distractor scores at least as high on both arguments. Every copy mechanism we know of is of that form. The dyad-only stratum is the set where such a scorer has no input at all.

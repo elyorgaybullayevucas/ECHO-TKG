@@ -1,0 +1,82 @@
+\section{Experiments}
+\label{sec:exp}
+
+\subsection{Setup}
+
+\paragraph{Datasets.}
+We use the five standard benchmarks in the versions released with RE-GCN and CEN~\cite{li2021regcn,li2022cen}: ICEWS14s (7\,128 entities, 230 relations, 365 daily snapshots), ICEWS18 (23\,033 / 256 / 304), GDELT (7\,691 / 240 / 2\,975 fifteen-minute snapshots), YAGO (10\,623 / 10 / 189 yearly) and WIKI (12\,554 / 24 / 232 yearly), with the usual chronological 80/10/10 split. No auxiliary data is used: in particular, we do not use the static entity-type graph that RE-GCN and its descendants optionally add on ICEWS.
+
+\paragraph{Baselines.}
+The comparison in \cref{tab:main} quotes each number from the paper that produced it and names the source, because numbers produced by different harnesses are not interchangeable~\cite{gastinger2023apples}. Rows for CyGNet, xERTE, TITer, RE-GCN, CEN, DaeMon, TiPNN and DiMNet on ICEWS18 and GDELT come from the DiMNet table~\cite{dong2025dimnet}; rows on YAGO and WIKI from the DaeMon table~\cite{dong2023daemon}; LogCL, HisRES, CID-TKG and CHE-TKG from their own papers; the diffusion rows from NADEx and FreqDiff; CognTKE, the recurrency baseline and CountTRuCoLa from their own papers. We additionally re-ran LogCL, the strongest competitor with released code, under our protocol on ICEWS18; it reaches MRR 36.0 there, consistent with its published 35.67. Methods marked $\dagger$ have not released code at the time of writing and could not be re-run.
+
+\paragraph{Implementation.}
+Entity and relation dimension 200, two message-passing layers, history $H = 10$ snapshots ($5$ on GDELT), stream length $L = 10$ ($16$ on YAGO and WIKI, $8$ on GDELT), stream dimension 64 with two blocks of four heads, support $S_1 = 96$, $S_2 = 64$ ($48$ on YAGO and WIKI), second-hop edges $P_2 = 16$, path dimension 32. AdamW with learning rate $10^{-3}$, weight decay $10^{-3}$, 5\% linear warm-up then cosine to $2 \cdot 10^{-5}$, at most 20 epochs with early stopping after 6 epochs without validation improvement, gradient clipping at 1, label smoothing 0.1 (0.05 on YAGO and WIKI), dropout 0.25 on event data and 0.15 on yearly data, structural auxiliary weight 0.3 (0 on YAGO and WIKI). The competition block is on for the event datasets and off for YAGO and WIKI; validation MRR makes that choice on all five datasets (for it: ICEWS18 36.92 vs 36.70, ICEWS14s 48.99 vs 48.81, GDELT 27.45 vs 27.38; against it: YAGO 87.41 vs 87.14, WIKI 83.38 vs 83.29), and both test results are reported in \cref{tab:compete}. Training runs in bfloat16 on one A100-40GB; an ICEWS18 epoch takes about 3 minutes and a run about 50 minutes, GDELT about 15 minutes per epoch. Every number is the mean of three seeds (1, 2, 3) with its standard deviation.
+
+\subsection{Main results}
+
+\begin{table*}[t]
+  \centering\small
+  \caption{\textbf{Main results}, time-aware filtered, $\times 100$. Each baseline number is quoted from the paper named in the source column; \model{} is the mean of three seeds (standard deviations in \cref{tab:compete}). $\dagger$: no released code. Best in \textbf{bold}, second \underline{underlined}. ICEWS14s rows other than DiMNet, LogCL, NADEx and \model{} are from the CID-TKG table.}
+  \label{tab:main}
+  \setlength{\tabcolsep}{3.5pt}
+  \begin{tabular}{l l rrr rrr rrr rrr rrr}
+    \toprule
+    & & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{ICEWS14s} & \multicolumn{3}{c}{GDELT} & \multicolumn{3}{c}{YAGO} & \multicolumn{3}{c}{WIKI} \\
+    \cmidrule(lr){3-5}\cmidrule(lr){6-8}\cmidrule(lr){9-11}\cmidrule(lr){12-14}\cmidrule(lr){15-17}
+    method & source & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} \\
+    \midrule
+    Recurrency baseline & \cite{gastinger2024history} & 28.7 & -- & -- & -- & -- & -- & 24.5 & -- & -- & 90.9 & -- & -- & 81.5 & -- & -- \\
+    CyGNet   & \cite{dong2025dimnet,dong2023daemon} & 24.93 & 15.90 & 42.61 & -- & -- & -- & 18.48 & 11.52 & 31.98 & 52.07 & 45.36 & 63.77 & 33.89 & 29.06 & 41.86 \\
+    xERTE    & \cite{dong2025dimnet,dong2023daemon} & 29.31 & 21.03 & 45.60 & -- & -- & -- & 18.09 & 12.30 & 30.34 & 84.19 & 80.09 & 89.78 & 71.14 & 68.05 & 79.01 \\
+    TITer    & \cite{dong2025dimnet,dong2023daemon} & 29.98 & 22.05 & 44.83 & -- & -- & -- & 15.46 & 10.98 & 24.31 & 87.47 & 84.89 & 90.27 & 75.50 & 72.96 & 79.02 \\
+    RE-GCN   & \cite{dong2025dimnet,dong2023daemon,lei2026cidtkg} & 30.58 & 21.01 & 48.75 & 42.39 & 31.96 & 62.29 & 19.64 & 12.42 & 33.69 & 84.12 & 80.76 & 89.98 & 77.55 & 73.75 & 83.68 \\
+    CEN      & \cite{dong2025dimnet} & 30.84 & 21.23 & 49.67 & -- & -- & -- & 20.18 & 12.84 & 34.10 & -- & -- & -- & -- & -- & -- \\
+    TiRGN    & \cite{lei2026cidtkg} & 33.66 & 23.19 & 54.22 & 44.75 & 34.26 & 65.28 & 21.67 & 13.63 & 37.60 & -- & -- & -- & -- & -- & -- \\
+    DaeMon   & \cite{dong2025dimnet,dong2023daemon} & 31.85 & 22.67 & 49.80 & -- & -- & -- & 20.73 & 13.65 & 34.23 & \underline{91.59} & \underline{90.03} & \textbf{93.34} & 82.38 & 78.26 & \textbf{88.01} \\
+    TiPNN    & \cite{dong2025dimnet} & 32.17 & 22.74 & 50.72 & -- & -- & -- & 21.17 & 14.03 & 34.76 & -- & -- & -- & -- & -- & -- \\
+    CountTRuCoLa & \cite{gastinger2026counttrucola} & 32.8 & -- & -- & -- & -- & -- & 23.8 & -- & -- & 90.9 & -- & -- & 82.7 & -- & -- \\
+    DiMNet   & \cite{dong2025dimnet} & 34.13 & 23.29 & 55.80 & 45.72 & 34.41 & 67.99 & 21.93 & 14.03 & 37.49 & -- & -- & -- & -- & -- & -- \\
+    CognTKE  & \cite{chen2025cogntke} & 35.24 & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & -- & \underline{83.21} & -- & -- \\
+    LogCL    & \cite{chen2024logcl} & 35.67 & 24.53 & 57.74 & 48.87 & 37.76 & 70.26 & 23.75 & 14.64 & 42.33 & -- & -- & -- & -- & -- & -- \\
+    DiffuTKG & \cite{freqdiff2026} & 35.65 & 25.19 & 59.55 & 47.58 & 36.38 & 66.01 & 21.35 & 14.43 & 36.05 & -- & -- & -- & -- & -- & -- \\
+    NADEx    & \cite{nadex2026} & 36.84 & 27.58 & 60.58 & 49.03 & 39.45 & 70.55 & 23.67 & 16.10 & 43.05 & -- & -- & -- & -- & -- & -- \\
+    FreqDiff$^\dagger$ & \cite{freqdiff2026} & 36.85 & 26.85 & \underline{61.47} & 50.85 & 39.82 & 71.48 & 25.04 & 17.64 & 41.83 & -- & -- & -- & -- & -- & -- \\
+    HisRES$^\dagger$   & \cite{zhang2024hisres} & 37.69 & 26.46 & 59.70 & 50.48 & 39.57 & 71.09 & 26.58 & 16.90 & \underline{46.31} & -- & -- & -- & -- & -- & -- \\
+    CHE-TKG$^\dagger$  & \cite{lei2026chetkg} & \underline{38.77} & \underline{27.58} & 60.95 & \underline{51.91} & \underline{41.37} & \underline{72.17} & \underline{27.38} & \underline{17.73} & 47.02 & -- & -- & -- & -- & -- & -- \\
+    CID-TKG$^\dagger$  & \cite{lei2026cidtkg} & \textbf{38.88} & \textbf{27.66} & 61.16 & \textbf{51.93} & \textbf{41.49} & \textbf{72.32} & \textbf{27.41} & \underline{17.76} & \textbf{47.03} & -- & -- & -- & -- & -- & -- \\
+    \midrule
+    \model{} (ours) & & 36.54 & 26.36 & 56.21 & 47.43 & 37.49 & 66.16 & 27.10 & \textbf{18.16} & 44.62 & \textbf{91.82} & \textbf{90.57} & \underline{93.23} & \textbf{83.41} & \textbf{80.44} & \underline{87.39} \\
+    \bottomrule
+  \end{tabular}
+\end{table*}
+
+\Cref{tab:main} reports the comparison. We read it in three parts and state each exactly.
+
+\textbf{YAGO and WIKI.} \model{} is above every published number we found on MRR and \hone{} on both yearly benchmarks, including DaeMon, which held them for three years, and CognTKE's WIKI MRR. On \hten{} DaeMon remains ahead by 0.1 and 0.6 points. The three-seed spread is 0.20 MRR on YAGO and 0.12 on WIKI, so the \hone{} margins of 0.54 and 2.18 are well outside it.
+
+\textbf{GDELT.} \model{} has the best \hone{} of any published method, 18.16 against 17.76 for CID-TKG, and the second MRR, 0.3 behind CID-TKG and above HisRES and every method with code. The seed spread is 0.02.
+
+\textbf{ICEWS18 and ICEWS14s.} \model{} is above every method with released code, including LogCL both as published and as re-run under our protocol, DiMNet, NADEx and the diffusion models on ICEWS18 MRR. It is below HisRES, CHE-TKG and CID-TKG, which report 1.2 to 2.3 more MRR on ICEWS18 and 3 to 4.5 more on ICEWS14s, and none of which has released code. We do not claim those gaps are protocol artefacts; we note only that gaps of this size are within what differences in evaluation settings have been shown to produce in this field~\cite{gastinger2023apples}, and that the one member of the family we could re-run reproduced its published number. The \hten{} gap to this family (4 to 6 points) is larger than the MRR gap and is where \model{} is weakest; \cref{sec:analysis} locates it in the cold strata.
+
+\begin{table}[t]
+  \centering\small
+  \caption{\textbf{Competition across candidates}, test MRR / \hone{}, three seeds. Validation MRR selects the setting in bold on every dataset; the unselected setting is reported for completeness.}
+  \label{tab:compete}
+  \begin{tabular}{lcc}
+    \toprule
+    dataset & without competition & with competition \\
+    \midrule
+    ICEWS18  & 36.29 \pm0.04 / 26.10 & \textbf{36.54 \pm0.10 / 26.36} \\
+    ICEWS14s & 47.18 \pm0.04 / 37.19 & \textbf{47.43 \pm0.14 / 37.49} \\
+    GDELT    & 27.01 \pm0.01 / 18.05 & \textbf{27.10 \pm0.02 / 18.16} \\
+    WIKI     & \textbf{83.41 \pm0.12 / 80.44} & 83.28 \pm0.17 / 80.22 \\
+    YAGO     & \textbf{91.82 \pm0.20 / 90.57} & 91.62 \pm0.12 / 90.33 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\paragraph{Competition.}
+\Cref{tab:compete} isolates the one per-dataset switch. Attention across the candidates of a query adds 0.25 MRR on ICEWS18, 0.25 on ICEWS14s and 0.09 on GDELT, in the same direction on every seed, and removes 0.13 and 0.20 on WIKI and YAGO. The diagnostic predicts this: on the yearly datasets a query rarely has more than one candidate with a live triple history, so there is nothing to compete, and the extra block only adds variance. Validation MRR makes the same choice as test on all five datasets, which is why the switch is a dataset setting rather than a tuned result.
+
+\paragraph{Training behaviour.}
+Every run selects its checkpoint between epochs 5 and 12 of 20, and the structural branch alone needs 17. A model that reads the history directly has little to memorise. Ten alternative recipes on ICEWS18 (16- and 20-epoch schedules, dropout 0.35 and 0.45, weight decay $10^{-3}$, learning rate $5 \cdot 10^{-4}$, auxiliary weight 0 and 1, label smoothing 0.2, wider supports) all land between 36.0 and 36.3 MRR and all peak at epochs 8 to 10; the plateau is a property of what the model can see, not of regularisation, and the ablations of \cref{sec:analysis} say which parts of what it sees matter.

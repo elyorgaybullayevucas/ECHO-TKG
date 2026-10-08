@@ -7,7 +7,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \begin{table}[t]
   \centering\small
-  \caption{\textbf{Performance by stratum} on ICEWS18 and ICEWS14s (three seeds, model without competition so that the rows match the ablation base; the competition setting moves the aggregates by 0.25). Strata partition the test set.}
+  \caption{\textbf{Performance by stratum} on ICEWS18 and ICEWS14s, final model, three seeds. Strata partition the test set, so the rows weight to the aggregates of \cref{tab:main}.}
   \label{tab:strata}
   \setlength{\tabcolsep}{2.8pt}\footnotesize
   \begin{tabular}{l rrrr rrrr}
@@ -16,16 +16,16 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
     \cmidrule(lr){2-5}\cmidrule(lr){6-9}
     stratum & share & MRR & \hone{} & \hten{} & share & MRR & \hone{} & \hten{} \\
     \midrule
-    cold-far   & 17.8\% &  1.84 &  0.64 &  3.18 & 15.9\% &  2.01 &  0.41 &  4.12 \\
-    cold-2hop  & 14.0\% &  8.93 &  3.13 & 19.46 & 12.0\% & 11.57 &  3.54 & 28.64 \\
-    dyad-only  & 19.2\% & 29.71 & 17.21 & 56.72 & 21.2\% & 37.26 & 23.45 & 66.82 \\
-    blocked    & 25.7\% & 34.99 & 16.82 & 72.96 & 16.6\% & 38.43 & 17.64 & 79.93 \\
-    clean      & 23.4\% & 85.64 & 76.65 & 99.02 & 34.4\% & 89.93 & 83.32 & 99.34 \\
+    cold-far   & 17.8\% &  1.75 &  0.57 &  2.98 & 15.9\% &  2.19 &  0.53 &  4.42 \\
+    cold-2hop  & 14.0\% &  9.43 &  3.40 & 20.67 & 12.0\% & 11.28 &  3.38 & 27.92 \\
+    dyad-only  & 19.2\% & 29.82 & 17.06 & 57.26 & 21.2\% & 37.54 & 23.44 & 67.20 \\
+    blocked    & 25.7\% & 34.95 & 16.76 & 72.55 & 16.6\% & 38.44 & 17.65 & 79.68 \\
+    clean      & 23.4\% & 86.43 & 77.87 & 99.07 & 34.4\% & 90.50 & 84.18 & 99.33 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-\Cref{tab:strata} is the central table of the paper. On ICEWS18 the clean stratum, where the answer recurred for $(s, r)$ and dominates every distractor on recency and count, is a quarter of the queries and is essentially solved (\hten{} 99.0). The blocked stratum, the same size, is where a monotone copy score provably cannot order the answer first; \model{} ranks it first 16.8\% of the time and in the top ten 73\% of the time, so the ordering information it uses is not count-and-recency. The dyad-only stratum, a fifth of the queries and invisible to every copy mechanism, reaches MRR 29.7 and \hten{} 56.7: the untrained blind-dyad counter reached 20.0 and 42.3 on the same stratum (\cref{sec:diag}), and the learned stream adds ten points on top of it. The two cold strata, a third of the queries, are where the model is weak: an answer that is a partner of a partner is found in the top ten one time in five, and an answer that is further than two hops from the subject is almost never found. The \hten{} gap to the global-graph family in \cref{tab:main} is of the order of the mass in these two rows, and we take it to be where the next step lies.
+\Cref{tab:strata} is the central table of the paper. On ICEWS18 the clean stratum, where the answer recurred for $(s, r)$ and dominates every distractor on recency and count, is a quarter of the queries and is essentially solved (\hten{} 99.0). The blocked stratum, the same size, is where a monotone copy score provably cannot order the answer first; \model{} ranks it first 16.8\% of the time and in the top ten 72.6\% of the time, so the ordering information it uses is not count-and-recency. The dyad-only stratum, a fifth of the queries and invisible to every copy mechanism, reaches MRR 29.8 and \hten{} 57.3: the untrained blind-dyad counter reached 20.0 and 42.3 on the same stratum (\cref{sec:diag}), and the learned stream adds ten points on top of it. The two cold strata, a third of the queries, are where the model is weak: an answer that is a partner of a partner is found in the top ten one time in five, and an answer that is further than two hops from the subject is almost never found. The \hten{} gap to the global-graph family in \cref{tab:main} is of the order of the mass in these two rows, and we take it to be where the next step lies.
 
 \subsection{Ablations}
 
@@ -59,6 +59,15 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 \textbf{The dyadic branch is the model.} Without it \model{} is a snapshot encoder with a popularity prior and scores 30.30 on ICEWS18, which is RE-GCN's published 30.58, and 67.18 on YAGO. The branch is worth 6.0 MRR on the event dataset and 24.6 on the yearly one.
 
 \textbf{The stream acts where the diagnostic said it would.} On ICEWS18 the Transformer over the event stream is worth 0.58 MRR over the eight summary statistics alone, and the relation types inside it are worth 0.43: a stream with types replaced by a single placeholder loses most of what the stream adds. The path intensity adds 0.37, and \cref{tab:strata} locates it: on cold-2hop queries it lifts MRR from 6.21 to 8.52 and \hten{} from 13.4 to 19.0 on seed 1. The seed spread on ICEWS18 is 0.04, so each of these effects is an order of magnitude above noise. On YAGO the same three parts are worth $+0.01$, $-0.03$ and $-0.12$, all inside the 0.20 seed spread. The eight statistics carry the dyadic branch on their own there, because on yearly data the question is only whether a fact is still running, and the count and recency of the triple answer it. This is the prediction made in \cref{sec:diag} before any model was trained, and it is the kind of evidence a stratum-level analysis can give and a leaderboard cannot.
+
+\begin{figure}[t]
+  \centering
+  \input{figures/fig_ablation_strata}
+  \caption{\textbf{Where each part acts} (ICEWS18, seed 1, change of MRR per stratum when the part is removed). The path intensity is paid for on cold-2hop; the relation types on blocked; the stream on dyad-only and blocked; the structural branch on both cold strata. Removing the whole dyadic branch costs 3.5 on dyad-only, 5.1 on blocked and 17.4 on clean, off the scale of this plot.}
+  \label{fig:ablation-strata}
+\end{figure}
+
+\Cref{fig:ablation-strata} resolves the same ablations by stratum, and each part is paid for where it was built: the path intensity on cold-2hop ($-1.42$ MRR when removed), the relation types on the blocked stratum ($-1.02$), the stream on dyad-only and blocked ($-1.85$ and $-1.35$), and the structural branch on the two cold strata ($-0.72$ and $-1.67$), which the dyad cannot see at all. No part except the dyadic branch itself costs the clean stratum more than 0.3 points. The parts of a superposition are additive in the strata they touch, which is what a sum of intensities should look like and what a gated mixture typically does not.
 
 \textbf{Two parts are null and are reported as such.} The popularity field and the candidate-context input move neither dataset outside the seed spread; a prototype intensity that scores every entity by similarity to the query's past answers, tried for the cold-far stratum, is likewise null ($+0.05$ on ICEWS18, $-0.16 \pm 0.19$ on YAGO) and is kept only as an ablation switch. We leave them in the released code with their switches rather than silently removing them, so that the ablation table is reproducible as printed.
 

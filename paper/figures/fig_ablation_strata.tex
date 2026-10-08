@@ -1,0 +1,32 @@
+% Change of MRR per stratum when one part is removed (ICEWS18, seed 1,
+% against the three-seed mean of the model without competition).
+% base: cold_far 1.84, cold_2hop 8.93, dyad_only 29.71, blocked 34.99, clean 85.64
+% no-path   2.37  7.51 28.88 34.82 85.36
+% no-type   1.85  8.77 29.19 33.97 85.46
+% no-stream 1.40  8.37 27.86 33.64 86.85
+% no-struct 1.12  7.26 28.67 34.68 85.39
+\begin{tikzpicture}
+  \begin{axis}[
+    ybar, width=\linewidth, height=5.0cm,
+    bar width=4.6pt, ymin=-2.2, ymax=1.5,
+    ylabel={$\Delta$ MRR vs.\ base}, ylabel style={font=\scriptsize},
+    symbolic x coords={cold-far,cold-2hop,dyad-only,blocked,clean},
+    xtick=data, tick label style={font=\scriptsize},
+    enlarge x limits=0.14,
+    legend style={at={(0.5,1.03)}, anchor=south, legend columns=4,
+                  font=\scriptsize, draw=none, fill=none, column sep=5pt},
+    axis line style={cGrey}, tick style={cGrey},
+    ymajorgrids, grid style={cGrey!25},
+    extra y ticks={0}, extra y tick labels={}, extra y tick style={grid style={cGrey, line width=0.6pt}},
+  ]
+    \addplot[fill=cPath, draw=none] coordinates {
+      (cold-far,0.53) (cold-2hop,-1.42) (dyad-only,-0.83) (blocked,-0.17) (clean,-0.28)};
+    \addplot[fill=cDyad!55, draw=none] coordinates {
+      (cold-far,0.01) (cold-2hop,-0.16) (dyad-only,-0.52) (blocked,-1.02) (clean,-0.18)};
+    \addplot[fill=cDyad, draw=none] coordinates {
+      (cold-far,-0.44) (cold-2hop,-0.56) (dyad-only,-1.85) (blocked,-1.35) (clean,1.21)};
+    \addplot[fill=cStruct, draw=none] coordinates {
+      (cold-far,-0.72) (cold-2hop,-1.67) (dyad-only,-1.04) (blocked,-0.31) (clean,-0.25)};
+    \legend{no path, no relation types, no stream, no structural}
+  \end{axis}
+\end{tikzpicture}

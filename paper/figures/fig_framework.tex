@@ -1,134 +1,145 @@
-% Framework figure: a worked example on the left (timeline, query,
-% support, dyad streams), the mechanism on the right (stream encoder,
-% competition, path, superposition). Pure TikZ.
+% Framework figure, v2. Three dashed sections under one timeline:
+%   left   zoom-in of the dyad stream encoder (tokens -> time code ->
+%          Transformer blocks -> read-out)
+%   middle per-snapshot structural evolution on top, dyad streams and the
+%          candidate-state tensor below, attention across candidates
+%   right  decoder column: path propagation, popularity, logaddexp, ranking
+% Pure TikZ; rendered to PDF by build_figs.sh.
 \begin{tikzpicture}[
-  x=1cm, y=1cm, font=\scriptsize,
-  panel/.style={rounded corners=6pt, draw=#1!50, fill=#1!5, line width=0.6pt},
-  ptitle/.style={font=\scriptsize\bfseries, text=#1, anchor=north west},
-  ent/.style={circle, draw=#1, fill=#1!25, minimum size=4.2mm, inner sep=0pt, font=\tiny\bfseries, text=#1!60!black, line width=0.6pt},
+  x=1cm, y=1cm, font=\tiny,
+  sec/.style={draw=cGrey!70, dashed, rounded corners=4pt, line width=0.5pt},
+  banner/.style={fill=cGrey!25, draw=none, font=\scriptsize\bfseries, text=cGrey!30!black, minimum height=5mm, inner xsep=6pt},
+  mod/.style={draw=#1, fill=#1!14, rounded corners=2.5pt, minimum height=4.6mm, inner xsep=3pt, inner ysep=1.5pt, align=center, line width=0.6pt, font=\tiny},
+  unit/.style={draw=#1!55, fill=#1!6, rounded corners=4pt, line width=0.5pt},
+  ent/.style={circle, draw=#1, fill=#1!25, minimum size=3.4mm, inner sep=0pt, font=\tiny\bfseries, text=#1!60!black, line width=0.5pt},
   sub/.style={ent=cDyad, fill=cDyad, text=white},
-  edg/.style={-{Stealth[length=1.4mm]}, line width=0.6pt, #1},
-  tok/.style={draw=#1, fill=#1!20, rounded corners=1.5pt, minimum width=7.2mm, minimum height=4.6mm, inner sep=1pt, font=\tiny, align=center},
-  blk/.style={draw=#1, fill=white, rounded corners=3pt, minimum height=6mm, inner xsep=3pt, inner ysep=2pt, align=center, line width=0.6pt, font=\tiny},
-  bb/.style={blk=#1, text width=31mm, inner ysep=3pt},
-  arr/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, cGrey!85},
-  carr/.style={-{Stealth[length=1.6mm]}, line width=0.9pt, #1},
-  snap/.style={draw=cGrey!60, fill=white, rounded corners=3pt, minimum width=24mm, minimum height=19mm},
+  edg/.style={-{Stealth[length=1.1mm]}, line width=0.5pt, #1},
+  arr/.style={-{Stealth[length=1.5mm]}, line width=0.6pt, cGrey!80!black},
+  carr/.style={-{Stealth[length=1.5mm]}, line width=0.8pt, #1},
+  oplus/.style={circle, draw=black, fill=white, inner sep=0pt, minimum size=3.2mm, font=\scriptsize},
+  cell/.style={draw=white, line width=0.3pt},
 ]
-\definecolor{rA}{HTML}{1F77B4} % relation a: consult
-\definecolor{rB}{HTML}{2CA02C} % relation b: make visit
-\definecolor{rC}{HTML}{D62728} % relation c: criticize
-\definecolor{cO}{HTML}{C0392B}  % candidate o1 (answer)
-\definecolor{cP}{HTML}{E07A1F}  % other partners
-\definecolor{cX}{HTML}{8E6BBF}  % entity reached only by a path
+\definecolor{rA}{HTML}{1F77B4}\definecolor{rB}{HTML}{2CA02C}\definecolor{rC}{HTML}{D62728}
+\definecolor{cO}{HTML}{C0392B}\definecolor{cP}{HTML}{E07A1F}\definecolor{cX}{HTML}{8E6BBF}
 
-% ══════════════════════════ PANEL A: evidence ══════════════════════════
-\node[panel=cDyad, minimum width=10.6cm, minimum height=8.1cm, anchor=north west] (PA) at (0,0) {};
-\node[ptitle=cDyad] at (0.15,-0.1) {A\quad Evidence read for the query $(s,\ r,\ ?,\ t)$};
+\newcommand{\tokrow}[3]{\foreach \c [count=\i from 0] in {#3} {\fill[\c, cell] (#1+\i*0.26, #2) rectangle ++(0.24,0.24);}}
+\newcommand{\cellmat}[5]{\foreach \r in {0,...,#3} {\foreach \c in {0,...,#4} {\pgfmathsetmacro{\sh}{25+int(mod(\r*7+\c*13,55))}\fill[#5!\sh, cell] (#1+\c*0.17, #2-\r*0.17) rectangle ++(0.16,0.16);}}}
 
-% ── timeline ──────────────────────────────────────────────────────────────
-\draw[-{Stealth[length=2mm]}, line width=0.8pt, cGrey] (0.4,-1.0) -- (10.3,-1.0);
-\foreach \x/\lab in {1.6/$t-3$, 4.2/$t-2$, 6.8/$t-1$} { \node[font=\tiny, text=cGrey, anchor=south] at (\x,-0.97) {\lab}; }
-\node[font=\tiny\bfseries, text=cDyad, anchor=south] at (9.2,-0.97) {$t$ (query)};
+% ───────────────────────── timeline ─────────────────────────
+\draw[-{Stealth[length=2mm]}, line width=0.9pt] (4.0,0) -- (18.6,0);
+\node[font=\scriptsize\bfseries, anchor=east] at (3.9,0) {Timeline};
+\foreach \x/\l in {5.7/$t-3$, 8.6/$t-2$, 11.5/$t-1$} {\node[font=\scriptsize\bfseries, anchor=south] at (\x,0.05) {\l}; \draw[cGrey] (\x,-0.08) -- (\x,0.08);}
+\node[font=\scriptsize\bfseries, anchor=south, text=cDyad] at (16.5,0.05) {$t$ (query)};
 
-% snapshot t-3: s -a-> o1 ; x -c-> s
-\begin{scope}[shift={(0.4,-3.35)}]
-  \node[snap, anchor=south west] at (0,0) {};
-  \node[sub] (s1) at (0.6,1.35) {$s$};
-  \node[ent=cO] (o1a) at (1.9,1.5) {$o_1$};
-  \node[ent=cP] (xa) at (1.0,0.35) {$x$};
-  \node[ent=cGrey] (ga) at (2.0,0.5) {};
-  \draw[edg=rA] (s1) -- node[above, font=\tiny, text=rA] {$a$} (o1a);
-  \draw[edg=rC] (xa) -- node[left, font=\tiny, text=rC] {$c$} (s1);
-  \draw[edg=cGrey!60] (xa) -- (ga);
+% ═══════════════ LEFT: dyad stream encoder (zoom-in) ═══════════════
+\node[sec, minimum width=3.5cm, minimum height=10.0cm, anchor=north west] (L) at (0,-0.35) {};
+\node[font=\scriptsize\bfseries, anchor=north, align=center] at (1.75,-0.45) {Dyad Stream Encoder};
+\node[anchor=west, text=cGrey] at (0.15,-1.15) {stream of $(s,o_1)$, most recent first};
+\foreach \i/\c/\l in {0/rB/$b{,}\ \delta{=}1$, 1/rA/$a{,}\ \delta{=}3$, 2/cGrey!30/pad, 3/cGrey!30/pad} {
+  \fill[\c, cell] (0.25+\i*0.8,-1.65) rectangle ++(0.7,0.26);
+  \node[anchor=north, text=cGrey] at (0.6+\i*0.8,-1.67) {\l};}
+\node[mod=cDyad, text width=28mm, anchor=north] (remb) at (1.75,-2.3) {relation embedding $\mathbf{E}_\rho[\rho_i]$};
+\node[mod=cDyad, text width=28mm, anchor=north] (tenc) at (1.75,-2.95) {time code $\phi(\delta_i)$\\$\sin,\cos$ of $\log(1{+}\delta_i)$};
+\node[oplus] (plus1) at (1.75,-3.85) {$+$};
+\draw[arr] (remb) -- (tenc); \draw[arr] (tenc) -- (plus1);
+\node[mod=cDyad, anchor=west, minimum width=10mm] (qtok) at (0.12,-3.85) {read-out $\mathbf{q}_r$};
+\foreach \k/\yy in {1/-4.3, 2/-5.55} {
+  \node[unit=cDyad, minimum width=31mm, minimum height=11.5mm, anchor=north] (blk\k) at (1.75,\yy) {};
+  \node[mod=cDyad, minimum width=27mm, anchor=north] at (1.75,\yy-0.08) {multi-head self-attention};
+  \node[mod=cDyad, minimum width=27mm, anchor=north] at (1.75,\yy-0.62) {feed-forward};
+  \node[font=\tiny, text=cDyad, anchor=south east] at (3.4,\yy-1.15) {block \k};
+}
+\draw[arr] (plus1) -- (blk1.north);
+\draw[arr] (qtok.south) |- ($(blk1.north)+(-0.9,0.12)$) -- ($(blk1.north)+(-0.9,0)$);
+\draw[arr] (blk1) -- (blk2);
+\node[mod=cDyad, fill=cDyad!25, minimum width=27mm, anchor=north] (zout) at (1.75,-7.0) {stream state $\mathbf{z}_{so}$};
+\draw[arr] (blk2) -- (zout);
+\node[anchor=north, text=cGrey, text width=30mm, align=center] at (1.75,-7.6) {one sequence per (query, candidate); the order and the types of the events enter here};
+\node[banner, anchor=south, minimum width=33mm] at (1.75,-10.3) {Stream Encoder};
+
+% ═══════════════ MIDDLE: evolution + dyadic evidence ═══════════════
+\node[sec, minimum width=10.3cm, minimum height=10.0cm, anchor=north west] (M) at (3.7,-0.35) {};
+\foreach \x/\k/\tl in {5.7/1/t-3, 8.6/2/t-2, 11.5/3/t-1} {
+  \node[unit=cStruct, minimum width=27mm, minimum height=27mm, anchor=north] (U\k) at (\x,-0.5) {};
+  \node[font=\tiny, text=cStruct, anchor=north west] at (\x-1.3,-0.52) {snapshot $G_{\tl}$};
+  \begin{scope}[shift={(\x-0.55,-1.45)}]
+    \node[sub] (s\k) at (0,0.25) {$s$};
+    \node[ent=cO] (o\k) at (1.0,0.45) {$o_1$};
+    \node[ent=cP] (x\k) at (0.45,-0.35) {$x$};
+    \node[ent=cP] (p\k) at (1.3,-0.3) {$o_2$};
+    \draw[edg=rA] (s\k) -- (o\k); \draw[edg=cGrey!60] (s\k) -- (x\k); \draw[edg=rB] (x\k) -- (p\k);
+  \end{scope}
+  \node[mod=cStruct, minimum width=22mm, anchor=north] (mp\k) at (\x,-2.0) {message passing\\mean $\|$ max};
+  \node[mod=cStruct, minimum width=22mm, anchor=north] (gru\k) at (\x,-2.7) {GRU update $\to \mathbf{E}_{\tl}$};
+  \draw[arr] (mp\k) -- (gru\k);
+}
+\draw[carr=cStruct] (gru1.east) -- ++(0.1,0) |- ($(U2.west)+(0,-1.5)$);
+\draw[carr=cStruct] (gru2.east) -- ++(0.1,0) |- ($(U3.west)+(0,-1.5)$);
+\node[mod=cStruct, fill=cStruct!25, minimum width=20mm, anchor=north west] (Et) at (10.9,-3.45) {evolved states $\mathbf{E}_t$};
+\draw[carr=cStruct] (gru3.south) -- (Et.north);
+
+\node[font=\scriptsize\bfseries, text=cDyad, anchor=west] at (3.9,-3.55) {Dyad streams of the support $\mathcal{S}(q)$};
+\node[ent=cO, anchor=west, minimum size=3mm] at (3.95,-4.05) {$o_1$};  \tokrow{4.55}{-4.17}{rB,rA,cGrey!30,cGrey!30}
+\node[ent=cP, anchor=west, minimum size=3mm] at (3.95,-4.45) {$o_2$};  \tokrow{4.55}{-4.57}{rA!60,rA,cGrey!30,cGrey!30}
+\node[ent=cP, anchor=west, minimum size=3mm] at (3.95,-4.85) {$x$};    \tokrow{4.55}{-4.97}{rC!60,cGrey!30,cGrey!30,cGrey!30}
+\node[anchor=west, text=cGrey, text width=40mm] at (5.8,-4.5) {typed, timed tokens $(\rho_i,\delta_i)$, one row per candidate, built from the events before $t$};
+\draw[carr=cDyad] (3.8,-4.5) -- (3.5,-4.5);
+\node[mod=cDyad, minimum width=22mm, anchor=north west] (stat) at (3.9,-5.5) {8 statistics $\mathbf{a}_{so}$\\counts, recency, mean gap};
+\node[mod=cPath, minimum width=22mm, anchor=north west] (ctx) at (3.9,-6.4) {context $\mathbf{c}_o$\\the candidate's own edges};
+
+\node[font=\scriptsize\bfseries, text=cDyad, anchor=west] at (9.0,-5.55) {Candidate states $\mathbf{H}_q$};
+\cellmat{9.0}{-5.9}{2}{7}{cDyad}
+\node[anchor=west, text=cGrey] at (10.5,-6.1) {rows $o_1, o_2, x$};
+\node[anchor=north west, text=cGrey, text width=42mm] at (9.0,-6.5) {$[\mathbf{z}_{so};\ \mathrm{LN}(\mathbf{a}_{so});\ \mathbf{W}_e\mathbf{E}_t[o];\ \mathbf{c}_o;\ \mathbf{q}_s;\ \mathbf{q}_r]$};
+\draw[arr] (stat.east) -- ++(0.25,0) |- (8.95,-6.0);
+\draw[arr] (ctx.east)  -- ++(0.25,0) |- (8.95,-6.2);
+\draw[carr=cDyad] (3.5,-7.0) -- ++(0.3,0) -- (8.6,-7.0) |- (8.95,-5.85);
+\draw[carr=cStruct] (Et.south) -- ++(0,-0.25) -| (10.9,-5.75) -- (10.45,-5.75);
+
+\node[unit=cComp, minimum width=42mm, minimum height=14mm, anchor=north west] (comp) at (9.0,-7.35) {};
+\node[font=\tiny\bfseries, text=cComp, anchor=north west] at (9.1,-7.4) {attention across the candidates of $q$};
+\cellmat{9.3}{-7.9}{2}{2}{cComp}
+\node[anchor=west, text=cGrey, text width=26mm] at (10.1,-8.15) {$3{\times}3$ attention: each candidate sees the others' streams};
+\node[mod=cDyad, fill=cDyad!25, minimum width=22mm, anchor=north west] (hp) at (9.0,-8.95) {refined states $\mathbf{H}'_q$};
+\draw[arr] (9.7,-6.45) -- (9.7,-7.35);
+\draw[arr] (comp) -- (hp);
+\node[banner, anchor=south west, minimum width=100mm] at (3.75,-10.3) {Evidence construction and dyadic encoding};
+
+% ═══════════════ RIGHT: decoder / superposition ═══════════════
+\node[sec, minimum width=4.6cm, minimum height=10.0cm, anchor=north west] (R) at (14.3,-0.35) {};
+\node[font=\scriptsize\bfseries, anchor=north] at (16.6,-0.45) {Intensities and ranking};
+\node[mod=cDyad, fill=cDyad!25, anchor=north, text width=38mm] (ld) at (16.6,-0.95) {$\log\lambda_{\text{dyad}}(o) = \mathbf{w}^{\!\top}\mathbf{h}'_{so} + b_{\text{dyad}}$, on $\mathcal{S}(q)$};
+\node[unit=cPath, minimum width=42mm, minimum height=17mm, anchor=north] (pu) at (16.6,-1.75) {};
+\node[font=\tiny\bfseries, text=cPath, anchor=north west] at (14.5,-1.8) {path propagation};
+\begin{scope}[shift={(14.75,-2.85)}]
+  \node[sub] (ps) at (0,0.3) {$s$}; \node[ent=cP] (px) at (0.95,0.3) {$x$}; \node[ent=cX] (po) at (1.9,0.3) {$o'$};
+  \draw[edg=cDyad] (ps) -- node[above] {$\mathbf{h}'_{sx}$} (px); \draw[edg=rB] (px) -- node[above] {$\rho',\delta'$} (po);
 \end{scope}
-% snapshot t-2: s -a-> o2 ; x -b-> o'
-\begin{scope}[shift={(3.0,-3.35)}]
-  \node[snap, anchor=south west] at (0,0) {};
-  \node[sub] (s2) at (0.6,1.35) {$s$};
-  \node[ent=cP] (o2b) at (1.9,1.5) {$o_2$};
-  \node[ent=cP] (xb) at (0.9,0.35) {$x$};
-  \node[ent=cX] (opb) at (2.0,0.45) {$o'$};
-  \draw[edg=rA] (s2) -- node[above, font=\tiny, text=rA] {$a$} (o2b);
-  \draw[edg=rB] (xb) -- node[below, font=\tiny, text=rB] {$b$} (opb);
-  \draw[edg=cGrey!60] (s2) -- (xb);
+\node[anchor=north west, text=cGrey, text width=40mm] at (14.5,-3.05) {$(\mathbf{W}_u\mathbf{h}'_{sx})\odot\mathbf{e}(\rho',\delta',c')$, summed at $o'$ over all paths};
+\node[mod=cPath, fill=cPath!25, anchor=north, text width=38mm] (lp) at (16.6,-3.75) {$\log\lambda_{\text{path}}(o')$, two hops from $s$};
+\node[unit=cPop, minimum width=42mm, minimum height=13mm, anchor=north] (pop) at (16.6,-4.45) {};
+\node[font=\tiny\bfseries, text=cPop, anchor=north west] at (14.5,-4.5) {popularity field};
+\foreach \i/\h in {0/0.35, 1/0.5, 2/0.2, 3/0.6, 4/0.3} {\fill[cPop!70] (14.7+\i*0.3,-5.6) rectangle ++(0.22,\h);}
+\node[anchor=north west, text=cGrey, text width=22mm] at (16.4,-4.85) {decayed counts of $(r,o)$ and of $o$, $\tau\in\{1,4,16,64\}$};
+\node[mod=cPop, fill=cPop!25, anchor=north, text width=38mm] (lpop) at (16.6,-5.85) {$\log\lambda_{\text{pop}}(o)$, all $N$ entities};
+\node[mod=cStruct, fill=cStruct!25, anchor=north, text width=38mm] (ls) at (16.6,-6.5) {$\log\lambda_{\text{struct}}(o)$, all $N$\\ConvTransE$(\mathbf{E}_t[s],\mathbf{R}[r])\cdot\mathbf{E}_t$};
+% bus to the sum
+\node[oplus, minimum size=4.5mm] (lae) at (16.6,-7.55) {$\Sigma$};
+\node[anchor=west, text=cGrey] at (16.9,-7.55) {$\operatorname{logaddexp}$};
+\foreach \n in {ld, lp, lpop, ls} {\draw[cGrey!80!black, line width=0.6pt] (\n.east) -- (\n.east -| 18.7,0);}
+\draw[cGrey!80!black, line width=0.6pt] (18.7,-1.2) -- (18.7,-7.55);
+\draw[arr] (18.7,-7.55) -- (lae.east);
+\node[font=\tiny\bfseries, anchor=north] at (16.6,-7.9) {score ranking};
+\begin{scope}[shift={(14.95,-9.4)}]
+  \draw[cGrey] (0,0) -- (3.3,0);
+  \foreach \i/\h/\c/\l in {0/1.1/cO/$o_1$, 1/0.75/cP/$o_2$, 2/0.45/cP/$x$, 3/0.55/cX/$o'$, 4/0.2/cGrey/$\cdots$} {\fill[\c!75] (0.2+\i*0.62,0) rectangle ++(0.38,\h); \node[anchor=north] at (0.39+\i*0.62,-0.02) {\l};}
+  \node[text=cO, anchor=south] at (0.39,1.12) {$\star$};
 \end{scope}
-% snapshot t-1: s -b-> o1 ; o2 -a-> s
-\begin{scope}[shift={(5.6,-3.35)}]
-  \node[snap, anchor=south west] at (0,0) {};
-  \node[sub] (s3) at (0.6,1.35) {$s$};
-  \node[ent=cO] (o1c) at (1.9,1.5) {$o_1$};
-  \node[ent=cP] (o2c) at (1.9,0.45) {$o_2$};
-  \node[ent=cP] (xc) at (0.8,0.35) {$x$};
-  \draw[edg=rB] (s3) -- node[above, font=\tiny, text=rB] {$b$} (o1c);
-  \draw[edg=rA] (o2c) -- node[right, font=\tiny, text=rA] {$a$} (s3);
-  \draw[edg=cGrey!60] (xc) -- (o2c);
-\end{scope}
-% the query
-\node[blk=cDyad, fill=cDyad!8, minimum width=18mm, minimum height=16mm, anchor=south west] (Q) at (8.3,-3.35) {query\\[1pt] $(s,\ \textcolor{rA}{a},\ ?,\ t)$\\[3pt] {\tiny candidates:} \\ \textcolor{cO}{$o_1$}\ \textcolor{cP}{$o_2$}\ \textcolor{cP}{$x$}\ $\cdots$};
+\draw[arr] (lae) -- (16.6,-7.9);
+\node[banner, anchor=south, minimum width=42mm] at (16.6,-10.3) {Superposition and decoding};
 
-% ── support and dyad streams ──────────────────────────────────────────────
-\node[font=\tiny\bfseries, text=cDyad, anchor=west] at (0.4,-3.8) {support $\mathcal{S}(q)$: partners of $s$ and past objects of $(s,a)$};
-\node[font=\tiny, text=cGrey, anchor=west] at (0.4,-4.2) {dyad streams, most recent first; token $=$ (typed relation, elapsed time)};
-
-\node[ent=cO, anchor=west] (d1) at (0.45,-4.8) {$o_1$};
-\node[tok=rB, right=2mm of d1] (t11) {$b$\\$\delta{=}1$};
-\node[tok=rA, right=1.5mm of t11] (t12) {$a$\\$\delta{=}3$};
-\node[tok=cGrey, right=1.5mm of t12, draw=cGrey!60, fill=white, text=cGrey!70] (t13) {pad};
-\node[ent=cP, anchor=west] (d2) at (0.45,-5.5) {$o_2$};
-\node[tok=rA, right=2mm of d2, dashed] (t21) {$a^{-1}$\\$\delta{=}1$};
-\node[tok=rA, right=1.5mm of t21] (t22) {$a$\\$\delta{=}2$};
-\node[tok=cGrey, right=1.5mm of t22, draw=cGrey!60, fill=white, text=cGrey!70] (t23) {pad};
-\node[ent=cP, anchor=west] (d3) at (0.45,-6.2) {$x$};
-\node[tok=rC, right=2mm of d3, dashed] (t31) {$c^{-1}$\\$\delta{=}3$};
-\node[tok=cGrey, right=1.5mm of t31, draw=cGrey!60, fill=white, text=cGrey!70] (t32) {pad};
-\node[tok=cGrey, right=1.5mm of t32, draw=cGrey!60, fill=white, text=cGrey!70] (t33) {pad};
-
-\node[font=\tiny, text=cGrey, anchor=west, align=left] at (0.4,-6.95) {$+$ eight statistics per candidate (counts, recency, mean gap of the triple and of the dyad)\\$+$ each candidate's own $P_2$ most recent typed edges, e.g.\ $x \xrightarrow{\ b\ } o'$ at $t-2$};
-
-\node[blk=cPath, anchor=west, minimum width=28mm] (hop) at (5.2,-5.15) {second hop\\$s \to x \xrightarrow{b,\ \delta=2} o'$};
-\node[font=\tiny, text=cPath, anchor=west, text width=36mm] at (5.2,-6.0) {$o'$ never interacted with $s$: no dyad stream, reached only through $x$};
-
-% ══════════════════════════ PANEL B: mechanism ══════════════════════════
-\node[panel=cStruct, minimum width=7.3cm, minimum height=8.1cm, anchor=north west] (PB) at (11.0,0) {};
-\node[ptitle=cStruct] at (11.15,-0.1) {B\quad Intensities and their superposition};
-
-\node[bb=cDyad, anchor=north west] (enc) at (11.25,-0.7) {Transformer over\\$[\,\mathbf{q}_r;\ \mathbf{x}_1;\dots;\mathbf{x}_L]$\\$\mathbf{x}_i = \mathbf{E}_\rho[\rho_i] + \phi(\delta_i)$\\read-out $\to \mathbf{z}_{so}$};
-\node[bb=cComp, anchor=north west] (cmp) at (11.25,-2.35) {attention across candidates\\$\mathbf{h}'_{so_1}, \mathbf{h}'_{so_2}, \mathbf{h}'_{sx}$\\see each other};
-\draw[carr=cDyad] (enc) -- (cmp);
-\node[bb=cDyad, fill=cDyad!12, anchor=north west] (ld) at (11.25,-3.65) {$\log\lambda_{\text{dyad}}(o)$, $o \in \mathcal{S}(q)$};
-\draw[carr=cComp] (cmp) -- (ld);
-
-\node[bb=cPath, anchor=north west] (pth) at (14.75,-0.7) {forward $\mathbf{h}'_{sx}$ along\\the edges of $x$\\$(\mathbf{W}_u\mathbf{h}'_{sx}) \odot \mathbf{e}(b,\delta{=}2)$\\arrives at $o'$};
-\node[bb=cPath, fill=cPath!12, anchor=north west] (lp) at (14.75,-3.65) {$\log\lambda_{\text{path}}(o')$, two hops};
-\draw[carr=cPath] (pth) -- (lp);
-\draw[carr=cPath, dashed] (cmp.east) -- ++(0.2,0) |- (pth.west);
-
-\node[bb=cStruct, fill=cStruct!12, anchor=north west] (ls) at (11.25,-4.55) {$\log\lambda_{\text{struct}}(o)$, all $N$\\evolved $\mathbf{E}_t$, ConvTransE};
-\node[bb=cPop, fill=cPop!12, anchor=north west] (lpop) at (14.75,-4.55) {$\log\lambda_{\text{pop}}(o)$, all $N$\\decayed counts of $(a,o)$, $o$};
-
-\node[font=\tiny\bfseries, text=cStruct, anchor=west] at (11.25,-5.6) {$\lambda(o) = \lambda_{\text{struct}} + \lambda_{\text{pop}} + \lambda_{\text{dyad}} + \lambda_{\text{path}}$ \quad {\mdseries\textcolor{cGrey}{($\operatorname{logaddexp}$ of the four)}}};
-\begin{scope}[shift={(11.5,-7.75)}]
-  \draw[cGrey] (0,0) -- (5.9,0);
-  \foreach \i/\lab/\hs/\hp/\hd/\hpa in {0/$o_1$/0.25/0.15/0.95/0.0, 1/$o_2$/0.22/0.12/0.55/0.12, 2/$x$/0.18/0.10/0.30/0.0, 3/$o'$/0.15/0.08/0.0/0.45, 4/$\cdots$/0.12/0.07/0.0/0.0} {
-    \fill[cStruct!70] (\i*1.2+0.2,0) rectangle ++(0.5,\hs);
-    \fill[cPop!70]    (\i*1.2+0.2,\hs) rectangle ++(0.5,\hp);
-    \fill[cDyad!80]   (\i*1.2+0.2,\hs+\hp) rectangle ++(0.5,\hd);
-    \fill[cPath!85]   (\i*1.2+0.2,\hs+\hp+\hd) rectangle ++(0.5,\hpa);
-    \node[font=\tiny, anchor=north] at (\i*1.2+0.45,-0.03) {\lab};
-  }
-  \node[font=\tiny, text=cGrey, anchor=south west] at (0,1.5) {intensities add: $o_1$ ranks first, $o'$ is reachable};
-  \foreach \i/\c/\l in {0/cStruct!70/struct, 1/cPop!70/pop, 2/cDyad!80/dyad, 3/cPath!85/path} {
-    \fill[\c] (1.9+\i*1.0,1.15) rectangle ++(0.2,0.15); \node[font=\tiny, anchor=west, text=cGrey] at (2.1+\i*1.0,1.22) {\l}; }
-\end{scope}
-
-% evidence flows from A into B
-\draw[carr=cDyad] (10.6,-5.3) -- ++(0.3,0) |- (enc.west);
-\node[font=\tiny, text=cDyad, anchor=south west, rotate=90] at (10.78,-5.2) {streams};
-\node[font=\tiny, text=cPath, anchor=north west, text width=30mm] at (15.0,-2.5) {uses the state of $x$ after competition and the edges of $x$ from panel A};
-
-% ══════════════════════════ legend ══════════════════════════
-\node[anchor=north west, font=\tiny, text=cGrey, align=left] at (0,-8.25) {%
-  relation types: \textcolor{rA}{$a$} consult,\ \textcolor{rB}{$b$} make visit,\ \textcolor{rC}{$c$} criticize;\ dashed $=$ inverse direction;\ grey edges $=$ other relations;\ %
-  \textcolor{cDyad}{$\bullet$} query subject,\ \textcolor{cO}{$\bullet$} answer,\ \textcolor{cP}{$\bullet$} other partners,\ \textcolor{cX}{$\bullet$} entity reached only by a path};
+% cross-section arrows
+\draw[carr=cDyad] (hp.east) -- ++(2.55,0) |- (ld.west);
+\draw[carr=cPath] (hp.east) -- ++(2.55,0) |- (pu.west);
+\draw[carr=cStruct] (Et.east) -- ++(0.9,0) |- (ls.west);
 \end{tikzpicture}

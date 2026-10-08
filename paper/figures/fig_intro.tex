@@ -1,59 +1,76 @@
-% Introduction figure: what a copy mechanism sees versus what the dyad
-% sees, on an ICEWS-style example. Entity names are illustrative.
+% Introduction figure, v2: three dated panels of the query subject's
+% neighbourhood, a relevance strip, and the two readings of the same
+% history (triple view vs dyad view) with the prediction. Entities are
+% badges, no images. Names and dates are illustrative.
 \begin{tikzpicture}[
-  x=1cm, y=1cm, font=\scriptsize,
-  panel/.style={rounded corners=6pt, draw=#1!50, fill=#1!5, line width=0.6pt},
-  ptitle/.style={font=\scriptsize\bfseries, text=#1, anchor=north west},
-  ent/.style={rounded corners=2.5pt, draw=#1, fill=#1!15, minimum height=5.2mm, minimum width=15mm, inner xsep=4pt, font=\scriptsize\bfseries, text=#1!65!black, line width=0.7pt},
-  edg/.style={-{Stealth[length=1.6mm]}, line width=0.8pt, #1},
-  lab/.style={font=\tiny, text=#1, fill=white, inner sep=1pt, sloped, midway},
-  note/.style={font=\tiny, text=cGrey, align=left},
+  x=1cm, y=1cm, font=\tiny,
+  panel/.style={draw=cGrey!60, fill=white, rounded corners=4pt, line width=0.5pt},
+  badge/.style={circle, draw=#1, fill=#1!18, minimum size=5.4mm, inner sep=0pt, font=\tiny\bfseries, text=#1!65!black, line width=0.7pt},
+  subj/.style={badge=cDyad, fill=cDyad, text=white, minimum size=6mm},
+  edg/.style={-{Stealth[length=1.3mm]}, line width=0.6pt, #1},
+  dedg/.style={-{Stealth[length=1.5mm]}, line width=1.1pt, #1},
+  lab/.style={font=\tiny, text=#1, pos=0.5, fill=white, inner sep=0.6pt, rounded corners=1pt},
+  arr/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, cGrey!85},
+  box/.style={draw=#1, fill=#1!10, rounded corners=3pt, inner sep=3pt, align=center, line width=0.6pt},
 ]
-\definecolor{rA}{HTML}{1F77B4}   % consult
-\definecolor{rB}{HTML}{2CA02C}   % sign agreement
-\definecolor{rC}{HTML}{D62728}   % criticize
-\definecolor{rD}{HTML}{8E6BBF}   % veto / other
-\definecolor{cS}{HTML}{2A6F97}   % subject
-\definecolor{cAns}{HTML}{C0392B} % answer
-\definecolor{cOth}{HTML}{E07A1F} % other partners
+\definecolor{rA}{HTML}{1F77B4}\definecolor{rB}{HTML}{2CA02C}\definecolor{rC}{HTML}{D62728}\definecolor{rD}{HTML}{8E6BBF}
+\definecolor{cAns}{HTML}{C0392B}
 
-% ── query strip ──────────────────────────────────────────────────────────
-\node[draw=cGrey!60, fill=cLight, rounded corners=4pt, inner sep=5pt, font=\scriptsize, anchor=north west] (q) at (0,0)
-  {query: (\textbf{United States},\ \textcolor{rA}{\textbf{consult}},\ ?,\ \textbf{Sep 14})\qquad true answer: \textcolor{cAns}{\textbf{Russia}}};
+% ── query ───────────────────────────────────────────────────────────────
+\node[box=cDyad, anchor=north west, font=\scriptsize] (Q) at (0,0) {\textbf{Query} at $t_q$:\ (\textbf{US},\ \textcolor{rA}{\textbf{consult}},\ ?)\qquad true answer: \textcolor{cAns}{\textbf{RU}}};
 
-% ══════════ left panel: what a copy mechanism sees ══════════
-\node[panel=cGrey, minimum width=8.3cm, minimum height=5.7cm, anchor=north west] (PL) at (0,-0.85) {};
-\node[ptitle=cGrey!80!black] at (0.15,-0.95) {What a copy mechanism reads: (United States, consult, $\cdot$)};
-
-\node[ent=cS] (usL) at (1.6,-3.4) {United States};
-\node[ent=cOth] (cnL) at (6.4,-2.2) {China};
-\node[ent=cOth] (jpL) at (6.4,-3.4) {Japan};
-\node[ent=cOth] (unL) at (6.4,-4.6) {UN};
-\draw[edg=rA] (usL) -- node[lab=rA, above] {consult, Sep 2} (cnL);
-\draw[edg=rA] (usL) -- node[lab=rA, above] {consult, Aug 21} (jpL);
-\draw[edg=rA] (usL) -- node[lab=rA, below] {consult, Jul 30} (unL);
-\node[note, anchor=north west, text width=78mm] at (0.25,-5.15) {candidates: China, Japan, UN. \textbf{Russia is not in this history}: the pair (United States, consult, Russia) never occurred, so every copy score is zero for it. On ICEWS18 this is the case for 23\% of all test queries.};
-
-% ══════════ right panel: what the dyad sees ══════════
-\node[panel=cDyad, minimum width=9.2cm, minimum height=5.7cm, anchor=north west] (PR) at (8.6,-0.85) {};
-\node[ptitle=cDyad] at (8.75,-0.95) {What \model{} reads: the dyad (United States, Russia), every relation, both directions};
-
-\node[ent=cS] (usR) at (10.3,-3.4) {United States};
-\node[ent=cAns] (ruR) at (16.3,-3.4) {Russia};
-% several typed, dated events between the two, both directions
-\draw[edg=rB] (usR.north east) to[bend left=38] node[lab=rB, above] {sign formal agreement, Sep 12} (ruR.north west);
-\draw[edg=rC] ([yshift=1.2mm]usR.east) to[bend left=12] node[lab=rC, above] {criticize, Sep 9} ([yshift=1.2mm]ruR.west);
-\draw[edg=rC] ([yshift=-1.2mm]ruR.west) to[bend left=12] node[lab=rC, below] {criticize, Sep 6} ([yshift=-1.2mm]usR.east);
-\draw[edg=rD] (ruR.south west) to[bend left=38] node[lab=rD, below] {make statement, Aug 30} (usR.south east);
-\draw[edg=rA, dashed] (usR.north) to[bend left=60] node[lab=rA, above] {consult?\ \ Sep 14} (ruR.north);
-
-\node[note, anchor=north west, text width=88mm] at (8.85,-5.15) {The dyad stream of (United States, Russia) is \textcolor{rB}{agreement}, \textcolor{rC}{criticize}, \textcolor{rC}{criticize}$^{-1}$, \textcolor{rD}{statement}$^{-1}$, with their times. A Transformer over this typed, ordered stream, read out for the query relation \textcolor{rA}{consult}, gives Russia an intensity although no consult ever linked them.};
-
-% ── bottom strip: strata ──────────────────────────────────────────────────
-\node[anchor=north west, font=\tiny, text=cGrey] at (0,-6.75) {ICEWS18 test queries by what the answer's history contains:};
-\begin{scope}[shift={(0,-7.35)}]
-  \fill[cStruct!75] (0,0) rectangle (9.0,0.32);   \node[font=\tiny, text=white] at (4.5,0.16) {recurrent 50.6\% (copy can see the answer)};
-  \fill[cDyad]      (9.0,0) rectangle (13.2,0.32); \node[font=\tiny, text=white] at (11.1,0.16) {dyad-only 23.4\%};
-  \fill[cGrey!65]   (13.2,0) rectangle (17.8,0.32); \node[font=\tiny, text=white] at (15.5,0.16) {cold 26.0\% (never interacted)};
+% ── three dated panels ──────────────────────────────────────────────────
+\foreach \px/\k/\tl in {0/1/$t_q-3$, 4.3/2/$t_q-2$, 8.6/3/$t_q-1$} {
+  \node[panel, minimum width=41mm, minimum height=38mm, anchor=north west] (P\k) at (\px,-0.95) {};
+  \node[font=\scriptsize\bfseries, anchor=north] at (\px+2.05,-1.0) {\tl};
+}
+\begin{scope}[shift={(2.05,-3.05)}]
+  \node[subj] (us1) at (0,0) {US};
+  \node[badge=cGrey] (cn1) at (-1.6,1.0) {CN};  \draw[edg=rA] (us1) -- node[lab=rA] {consult} (cn1);
+  \node[badge=cGrey] (un1) at (-1.6,-1.0) {UN}; \draw[edg=rA] (us1) -- node[lab=rA] {consult} (un1);
+  \node[badge=cAns] (ru1) at (1.6,1.0) {RU};   \draw[dedg=rB] (ru1) -- node[lab=rB] {sign agreement} (us1);
+  \node[badge=cGrey] (jp1) at (1.6,-1.0) {JP}; \draw[edg=rD] (jp1) -- node[lab=rD] {make visit} (us1);
 \end{scope}
+\begin{scope}[shift={(6.35,-3.05)}]
+  \node[subj] (us2) at (0,0) {US};
+  \node[badge=cAns] (ru2) at (1.7,0.45) {RU};
+  \draw[dedg=rC] ([yshift=1.5mm]us2.east) -- node[lab=rC] {criticize} ([yshift=1.5mm]ru2.west);
+  \draw[dedg=rC] ([yshift=-1.5mm]ru2.west) -- node[lab=rC] {criticize} ([yshift=-1.5mm]us2.east);
+  \node[badge=cGrey] (jp2) at (-1.6,1.0) {JP};  \draw[edg=rA] (us2) -- node[lab=rA] {consult} (jp2);
+  \node[badge=cGrey] (cn2) at (-1.6,-1.0) {CN}; \draw[edg=rD] (cn2) -- node[lab=rD] {make statement} (us2);
+  \node[badge=cGrey] (de2) at (1.5,-1.1) {DE};  \draw[edg=rB] (us2) -- node[lab=rB] {sign agreement} (de2);
+\end{scope}
+\begin{scope}[shift={(10.65,-3.05)}]
+  \node[subj] (us3) at (0,0) {US};
+  \node[badge=cAns] (ru3) at (1.6,1.0) {RU};   \draw[dedg=rD] (ru3) -- node[lab=rD] {make statement} (us3);
+  \node[badge=cGrey] (cn3) at (-1.6,1.0) {CN};  \draw[edg=rA] (us3) -- node[lab=rA] {consult} (cn3);
+  \node[badge=cGrey] (un3) at (-1.6,-1.0) {UN}; \draw[edg=rD] (us3) -- node[lab=rD] {make statement} (un3);
+  \node[badge=cGrey] (de3) at (1.6,-1.0) {DE}; \draw[edg=rC] (us3) -- node[lab=rC] {threaten} (de3);
+\end{scope}
+\node[font=\tiny, text=cGrey, anchor=north west, text width=125mm] at (0,-4.95) {bold edges: the events on the dyad (US, RU), in both directions; thin edges: the rest of the subject's neighbourhood. No \textcolor{rA}{consult} edge ever links US and RU.};
+
+% ── relevance strip ────────────────────────────────────────────────────
+\node[font=\tiny, anchor=west, text=cGrey] at (0,-5.7) {relevance of each snapshot to the query under the two readings of the history:};
+\node[font=\tiny, anchor=east, text=cGrey] at (1.5,-6.15) {triple view};
+\node[font=\tiny, anchor=east, text=cDyad] at (1.5,-6.7) {dyad view};
+\foreach \px/\d in {2.05/0.34, 6.35/0.42, 10.65/0.38} {
+  \fill[cGrey!40] (\px-0.3,-6.2) rectangle ++(0.6,0.03);
+  \fill[cDyad]    (\px-0.3,-6.85) rectangle ++(0.6,\d);
+}
+\node[font=\tiny, text=cGrey, anchor=west] at (0,-7.5) {triple view: zero on every snapshot, RU never appears under consult};
+\node[font=\tiny, text=cDyad, anchor=west] at (0,-7.85) {dyad view: positive on every snapshot, RU is a partner of US throughout};
+
+% ── the two readings and the prediction ─────────────────────────────────
+\node[box=cGrey, anchor=north west, text width=40mm] (copy) at (13.4,-0.95) {\textbf{triple view}\\past objects of (US, consult): \{CN, UN, JP\}\\[2pt]\textcolor{cAns}{RU $\notin$ history $\Rightarrow$ score $0$}};
+\node[box=cDyad, anchor=north west, text width=40mm] (dyad) at (13.4,-2.5) {\textbf{dyad view} (\model{})\\stream of (US, RU), most recent first:\\\textcolor{rD}{statement$^{-1}$}, \textcolor{rC}{criticize$^{-1}$}, \textcolor{rC}{criticize}, \textcolor{rB}{agreement$^{-1}$}\\[1pt]read out for \textcolor{rA}{consult} by a Transformer};
+\node[box=cStruct, anchor=north west, text width=40mm, minimum height=15mm] (pred) at (13.4,-4.5) {};
+\node[font=\tiny\bfseries, anchor=north west] at (13.5,-4.55) {prediction};
+\begin{scope}[shift={(13.8,-5.95)}]
+  \draw[cGrey] (-0.1,0) -- (3.5,0);
+  \foreach \i/\h/\c/\l in {0/1.0/cAns/RU, 1/0.55/cGrey/CN, 2/0.4/cGrey/JP, 3/0.3/cGrey/UN, 4/0.2/cGrey/DE} {\fill[\c!75] (\i*0.68,0) rectangle ++(0.4,\h); \node[anchor=north, font=\tiny] at (0.2+\i*0.68,-0.02) {\l};}
+\end{scope}
+\draw[arr] (copy.south) -- (dyad.north);
+\draw[arr] (dyad.south) -- (pred.north);
+\draw[arr, cDyad] (P3.east) -- ++(0.25,0) |- (dyad.west);
+\node[font=\tiny, text=cGrey, anchor=north west, text width=40mm] at (13.4,-6.45) {on ICEWS18, 23.4\% of test answers are visible only in the dyad view};
 \end{tikzpicture}

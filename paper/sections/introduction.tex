@@ -8,7 +8,7 @@ A recurring finding runs through this literature and is easy to underrate. A bas
 \begin{figure*}[!tb]
   \centering
   \figfile{fig_intro}{\textwidth}
-  \caption{\textbf{The unit of evidence.} For the query (United States, consult, ?, Sep 14) a copy mechanism reads the past objects of the pair (United States, consult) and cannot see Russia, which never occurred under that relation; \model{} reads the \emph{dyad} (United States, Russia): every event between the two under any relation and in either direction, with its type and its time. On ICEWS18 the answer is visible only through the dyad for 23.4\% of test queries. Entity names and dates are illustrative; the strata shares are measured (\cref{sec:diag}).}
+  \caption{\textbf{The unit of evidence.} The neighbourhood of the query subject US over the three snapshots before the query (US, consult, ?). A copy mechanism reads the \emph{triple} history, the past objects of (US, consult), and finds CN, UN and JP; RU never occurred under consult, so its score is zero on every snapshot. \model{} reads the \emph{dyad} (US, RU): every event between the two under any relation and in either direction (bold edges), which is present on every snapshot and, read as a typed, ordered stream, ranks RU first. On ICEWS18 the answer is visible only in the dyad view for 23.4\% of test queries (\cref{sec:diag}). Entity badges and dates are illustrative.}
   \label{fig:intro}
 \end{figure*}
 

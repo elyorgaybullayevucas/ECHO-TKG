@@ -32,8 +32,8 @@
 \node[outbox=cPop] (lp)      at (\cE,\rP) {$\log\lambda_{\text{pop}}(o)$\\all $N$ entities};
 
 % ── dyadic ───────────────────────────────────────────────────────────────
-\node[box, draw=cDyad] (sup)  at (\cA,\rD) {support $\mathcal{S}(q)$\\objects of $(s,r)$ $\cup$ partners of $s$};
-\node[box, draw=cDyad] (str)  at (\cB,\rD) {dyad stream $\mathcal{D}_{so}$\\$(\rho_1,\delta_1),\dots,(\rho_L,\delta_L)$};
+\node[box, draw=cDyad] (sup)  at (\cA,\rD) {support $\mathcal{S}(q)$\\{\scriptsize objects of $(s,r)$, partners of $s$}};
+\node[box, draw=cDyad] (str)  at (\cB,\rD) {dyad stream $\mathcal{D}_{so}$\\{\scriptsize $(\rho_1,\delta_1),\dots,(\rho_L,\delta_L)$}};
 \node[box, draw=cDyad] (tr)   at (\cC,\rD) {Transformer\\read-out token $= r$};
 \node[box, draw=cComp] (comp) at (\cD,\rD) {attention across\\the candidates};
 \node[outbox=cDyad] (ld)      at (\cE,\rD) {$\log\lambda_{\text{dyad}}(o)$\\$o \in \mathcal{S}(q)$};
@@ -55,16 +55,16 @@
   \node[lane=cDyad,   fit=(sup)(ld)]  (L3) {};
   \node[lane=cPath,   fit=(edge)(lpath)] (L4) {};
 \end{scope}
-\node[lanelab=cStruct] at ($(L1.west)+(-0.15,0)$) {structural};
-\node[lanelab=cPop]    at ($(L2.west)+(-0.1,0)$) {popularity};
-\node[lanelab=cDyad]   at ($(L3.west)+(-0.1,0)$) {dyadic};
-\node[lanelab=cPath]   at ($(L4.west)+(-0.1,0)$) {path};
+\node[lanelab=cStruct] at ($(L1.west)+(-0.15,0.28)$) {structural};
+\node[lanelab=cPop]    at ($(L2.west)+(-0.15,0.28)$) {popularity};
+\node[lanelab=cDyad]   at ($(L3.west)+(-0.15,0.28)$) {dyadic};
+\node[lanelab=cPath]   at ($(L4.west)+(-0.15,0.28)$) {path};
 
 % ── arrows ───────────────────────────────────────────────────────────────
-\draw[arr] (hist.east) -- ++(0.9,0) |- (L1.west);
-\draw[arr] (hist.east) -- ++(0.9,0) |- (L2.west);
-\draw[arr] (hist.east) -- ++(0.9,0) |- (L3.west);
-\draw[arr] (q.east) -- ++(0.9,0) |- (L3.west);
+\draw[arr] (hist.east) -- ++(0.9,0) |- ($(L1.west)+(0,-0.2)$);
+\draw[arr] (hist.east) -- ++(0.9,0) |- ($(L2.west)+(0,-0.2)$);
+\draw[arr] (hist.east) -- ++(0.9,0) |- ($(L3.west)+(0,-0.2)$);
+\draw[arr] (q.east) -- ++(0.9,0) |- ($(L3.west)+(0,-0.2)$);
 \draw[carr=cStruct] (snap) -- (evo); \draw[carr=cStruct] (evo) -- (conv); \draw[carr=cStruct] (conv) -- (ls);
 \draw[carr=cPop] (cnt) -- (poph); \draw[carr=cPop] (poph) -- (lp);
 \draw[carr=cDyad] (sup) -- (str); \draw[carr=cDyad] (str) -- (tr); \draw[carr=cDyad] (tr) -- (comp); \draw[carr=cComp] (comp) -- (ld);

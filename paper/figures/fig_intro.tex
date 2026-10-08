@@ -4,6 +4,35 @@
 %   2  the question, and two ways of reading the past
 %   3  the answer
 % Badges instead of flags; names and dates are illustrative.
+\tikzset{
+  % vector flags, clipped to a disc of radius R (pic argument), drawn at the pic origin
+  pics/flagUS/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[white] (-#1,-#1) rectangle (#1,#1);
+      \foreach \i in {0,2,4,6,8,10,12} {\fill[red!85!black] (-#1,{#1-(\i+1)*2*#1/13}) rectangle (#1,{#1-\i*2*#1/13});}
+      \fill[blue!60!black] (-#1,#1) rectangle (0.05*#1,{#1-7*2*#1/13});
+      \foreach \x in {-0.8,-0.5,-0.2} {\foreach \y in {0.85,0.6,0.35,0.1} {\fill[white] ({\x*#1},{\y*#1}) circle (0.045*#1);}}
+    \end{scope}}},
+  pics/flagRU/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[white] (-#1,#1) rectangle (#1,{#1/3}); \fill[blue!65!black] (-#1,{#1/3}) rectangle (#1,{-#1/3}); \fill[red!80!black] (-#1,{-#1/3}) rectangle (#1,-#1);
+    \end{scope}}},
+  pics/flagCN/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[red!85!black] (-#1,-#1) rectangle (#1,#1); \fill[yellow!90!orange] (-0.5*#1,0.45*#1) circle (0.22*#1);
+      \foreach \fx/\fy in {-0.1/0.8, 0.12/0.65, 0.12/0.35, -0.1/0.2} {\fill[yellow!90!orange] ({\fx*#1},{\fy*#1}) circle (0.07*#1);}
+    \end{scope}}},
+  pics/flagJP/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[white] (-#1,-#1) rectangle (#1,#1); \fill[red!80!black] (0,0) circle (0.45*#1);
+    \end{scope}}},
+  pics/flagDE/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[black] (-#1,#1) rectangle (#1,{#1/3}); \fill[red!80!black] (-#1,{#1/3}) rectangle (#1,{-#1/3}); \fill[yellow!85!orange] (-#1,{-#1/3}) rectangle (#1,-#1);
+    \end{scope}}},
+  pics/flagUN/.style={code={\begin{scope}\clip (0,0) circle (#1);
+      \fill[cyan!45!blue!60] (-#1,-#1) rectangle (#1,#1); \draw[white, line width=0.9pt] (0,0) circle (0.5*#1); \draw[white, line width=0.9pt] (0,0) circle (0.25*#1);
+      \foreach \fa in {0,45,...,315} {\draw[white, line width=0.6pt] (\fa:0.25*#1) -- (\fa:0.5*#1);}
+      \draw[white, line width=0.9pt] (-0.75*#1,-0.3*#1) .. controls (-0.4*#1,-0.75*#1) and (0.4*#1,-0.75*#1) .. (0.75*#1,-0.3*#1);
+    \end{scope}}},
+  % a country node: flag disc with a ring, name underneath
+  country/.style 2 args={circle, minimum size=9mm, inner sep=0pt, draw=#1, line width=1.1pt, fill=white, path picture={\pic at (path picture bounding box.center) {flag#2=0.45cm};}, label={[font=\scriptsize\bfseries, text=#1!60!black, inner sep=1pt]below:\countryname}},
+}
 \begin{tikzpicture}[
   x=1cm, y=1cm, font=\scriptsize,
   stage/.style={draw=#1!60, fill=#1!5, rounded corners=8pt, line width=0.7pt},
@@ -12,7 +41,7 @@
   us/.style={badge=cDyad, fill=cDyad, text=white, minimum size=10mm},
   edg/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, #1},
   dedg/.style={-{Stealth[length=1.9mm]}, line width=1.5pt, #1},
-  lab/.style={font=\tiny, text=#1, pos=0.5, fill=white, inner sep=1pt, rounded corners=1.5pt, align=center},
+  lab/.style={font=\tiny, text=#1!80!black, pos=0.5, fill=white, draw=#1!60, line width=0.4pt, inner sep=1.5pt, rounded corners=3pt, align=center},
   big/.style={-{Stealth[length=4mm, width=5mm]}, line width=3pt, cGrey!55},
   card/.style={draw=#1, fill=white, rounded corners=4pt, inner sep=5pt, align=left, line width=0.7pt, text width=50mm},
   ev/.style={draw=#1, fill=#1!18, rounded corners=2pt, minimum height=5mm, inner xsep=4pt, font=\tiny, align=center, line width=0.5pt},
@@ -24,19 +53,19 @@
 \node[stage=cGrey, minimum width=62mm, minimum height=74mm, anchor=north west] (S1) at (0,0) {};
 \node[stitle=cGrey] at (3.1,-0.15) {1\quad What happened so far};
 \node[font=\tiny, text=cGrey, anchor=north] at (3.1,-0.6) {countries, linked by events that have a type and a date};
-\node[us] (us) at (2.6,-3.9) {United\\States};
-\node[badge=cAns]  (ru) at (5.4,-2.5) {Russia};
-\node[badge=cGrey] (cn) at (0.75,-2.6) {China};
-\node[badge=cGrey] (jp) at (0.9,-5.6) {Japan};
-\node[badge=cGrey] (un) at (2.4,-1.5) {UN};
-\node[badge=cGrey] (de) at (5.0,-5.7) {Germany};
-\draw[edg=rA] (us) -- node[lab=rA] {consult\\Feb 16} (cn);
-\draw[edg=rA] (us) -- node[lab=rA] {consult\\Mar 1} (jp);
-\draw[edg=rA] (us) -- node[lab=rA] {consult\\Jan 20} (un);
+\def\countryname{United States}\node[country={cDyad}{US}, minimum size=11mm] (us) at (2.6,-3.9) {};
+\def\countryname{Russia}\node[country={cAns}{RU}] (ru) at (5.45,-2.15) {};
+\def\countryname{China}\node[country={cGrey}{CN}] (cn) at (0.65,-3.2) {};
+\def\countryname{Japan}\node[country={cGrey}{JP}] (jp) at (0.95,-5.75) {};
+\def\countryname{UN}\node[country={cGrey}{UN}] (un) at (1.5,-1.35) {};
+\def\countryname{Germany}\node[country={cGrey}{DE}] (de) at (5.0,-5.85) {};
+\draw[edg=rA] (us) to[bend left=12] node[lab=rA] {consult\\Feb 16} (cn);
+\draw[edg=rA] (us) to[bend left=12] node[lab=rA] {consult\\Mar 1} (jp);
+\draw[edg=rA] (us) to[bend left=10] node[lab=rA, pos=0.55] {consult\\Jan 20} (un);
 \draw[dedg=rB] (us.north east) to[bend left=35] node[lab=rB, pos=0.5] {sign agreement\\Jan 15} (ru.north west);
-\draw[dedg=rC] (us.east) -- node[lab=rC, pos=0.5] {criticize\\Mar 1} (ru.south west);
-\draw[dedg=rD] (ru.south) to[bend left=30] node[lab=rD, pos=0.5] {make statement\\Mar 13} (us.south east);
-\draw[edg=rC] (us) -- node[lab=rC] {threaten\\Feb 27} (de);
+\draw[dedg=rC] (us.east) -- node[lab=rC, pos=0.55] {criticize\\Mar 1} (ru.south west);
+\draw[dedg=rD] (ru.south) to[bend left=30] node[lab=rD, pos=0.62] {make statement\\Mar 13} (us.south east);
+\draw[edg=rC] (us) to[bend right=12] node[lab=rC] {threaten\\Feb 27} (de);
 \draw[edg=rB] (ru.south east) to[bend left=15] node[lab=rB, pos=0.7] {sign agreement\\Feb 20} (de.north east);
 \node[font=\tiny, text=cGrey, anchor=south, text width=58mm, align=center] at (3.1,-7.2) {bold arrows: everything that happened between the United States and Russia, in both directions};
 

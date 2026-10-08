@@ -1,0 +1,134 @@
+% Framework figure: a worked example on the left (timeline, query,
+% support, dyad streams), the mechanism on the right (stream encoder,
+% competition, path, superposition). Pure TikZ.
+\begin{tikzpicture}[
+  x=1cm, y=1cm, font=\scriptsize,
+  panel/.style={rounded corners=6pt, draw=#1!50, fill=#1!5, line width=0.6pt},
+  ptitle/.style={font=\scriptsize\bfseries, text=#1, anchor=north west},
+  ent/.style={circle, draw=#1, fill=#1!25, minimum size=4.2mm, inner sep=0pt, font=\tiny\bfseries, text=#1!60!black, line width=0.6pt},
+  sub/.style={ent=cDyad, fill=cDyad, text=white},
+  edg/.style={-{Stealth[length=1.4mm]}, line width=0.6pt, #1},
+  tok/.style={draw=#1, fill=#1!20, rounded corners=1.5pt, minimum width=7.2mm, minimum height=4.6mm, inner sep=1pt, font=\tiny, align=center},
+  blk/.style={draw=#1, fill=white, rounded corners=3pt, minimum height=6mm, inner xsep=3pt, inner ysep=2pt, align=center, line width=0.6pt, font=\tiny},
+  bb/.style={blk=#1, text width=31mm, inner ysep=3pt},
+  arr/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, cGrey!85},
+  carr/.style={-{Stealth[length=1.6mm]}, line width=0.9pt, #1},
+  snap/.style={draw=cGrey!60, fill=white, rounded corners=3pt, minimum width=24mm, minimum height=19mm},
+]
+\definecolor{rA}{HTML}{1F77B4} % relation a: consult
+\definecolor{rB}{HTML}{2CA02C} % relation b: make visit
+\definecolor{rC}{HTML}{D62728} % relation c: criticize
+\definecolor{cO}{HTML}{C0392B}  % candidate o1 (answer)
+\definecolor{cP}{HTML}{E07A1F}  % other partners
+\definecolor{cX}{HTML}{8E6BBF}  % entity reached only by a path
+
+% ══════════════════════════ PANEL A: evidence ══════════════════════════
+\node[panel=cDyad, minimum width=10.6cm, minimum height=8.1cm, anchor=north west] (PA) at (0,0) {};
+\node[ptitle=cDyad] at (0.15,-0.1) {A\quad Evidence read for the query $(s,\ r,\ ?,\ t)$};
+
+% ── timeline ──────────────────────────────────────────────────────────────
+\draw[-{Stealth[length=2mm]}, line width=0.8pt, cGrey] (0.4,-1.0) -- (10.3,-1.0);
+\foreach \x/\lab in {1.6/$t-3$, 4.2/$t-2$, 6.8/$t-1$} { \node[font=\tiny, text=cGrey, anchor=south] at (\x,-0.97) {\lab}; }
+\node[font=\tiny\bfseries, text=cDyad, anchor=south] at (9.2,-0.97) {$t$ (query)};
+
+% snapshot t-3: s -a-> o1 ; x -c-> s
+\begin{scope}[shift={(0.4,-3.35)}]
+  \node[snap, anchor=south west] at (0,0) {};
+  \node[sub] (s1) at (0.6,1.35) {$s$};
+  \node[ent=cO] (o1a) at (1.9,1.5) {$o_1$};
+  \node[ent=cP] (xa) at (1.0,0.35) {$x$};
+  \node[ent=cGrey] (ga) at (2.0,0.5) {};
+  \draw[edg=rA] (s1) -- node[above, font=\tiny, text=rA] {$a$} (o1a);
+  \draw[edg=rC] (xa) -- node[left, font=\tiny, text=rC] {$c$} (s1);
+  \draw[edg=cGrey!60] (xa) -- (ga);
+\end{scope}
+% snapshot t-2: s -a-> o2 ; x -b-> o'
+\begin{scope}[shift={(3.0,-3.35)}]
+  \node[snap, anchor=south west] at (0,0) {};
+  \node[sub] (s2) at (0.6,1.35) {$s$};
+  \node[ent=cP] (o2b) at (1.9,1.5) {$o_2$};
+  \node[ent=cP] (xb) at (0.9,0.35) {$x$};
+  \node[ent=cX] (opb) at (2.0,0.45) {$o'$};
+  \draw[edg=rA] (s2) -- node[above, font=\tiny, text=rA] {$a$} (o2b);
+  \draw[edg=rB] (xb) -- node[below, font=\tiny, text=rB] {$b$} (opb);
+  \draw[edg=cGrey!60] (s2) -- (xb);
+\end{scope}
+% snapshot t-1: s -b-> o1 ; o2 -a-> s
+\begin{scope}[shift={(5.6,-3.35)}]
+  \node[snap, anchor=south west] at (0,0) {};
+  \node[sub] (s3) at (0.6,1.35) {$s$};
+  \node[ent=cO] (o1c) at (1.9,1.5) {$o_1$};
+  \node[ent=cP] (o2c) at (1.9,0.45) {$o_2$};
+  \node[ent=cP] (xc) at (0.8,0.35) {$x$};
+  \draw[edg=rB] (s3) -- node[above, font=\tiny, text=rB] {$b$} (o1c);
+  \draw[edg=rA] (o2c) -- node[right, font=\tiny, text=rA] {$a$} (s3);
+  \draw[edg=cGrey!60] (xc) -- (o2c);
+\end{scope}
+% the query
+\node[blk=cDyad, fill=cDyad!8, minimum width=18mm, minimum height=16mm, anchor=south west] (Q) at (8.3,-3.35) {query\\[1pt] $(s,\ \textcolor{rA}{a},\ ?,\ t)$\\[3pt] {\tiny candidates:} \\ \textcolor{cO}{$o_1$}\ \textcolor{cP}{$o_2$}\ \textcolor{cP}{$x$}\ $\cdots$};
+
+% ── support and dyad streams ──────────────────────────────────────────────
+\node[font=\tiny\bfseries, text=cDyad, anchor=west] at (0.4,-3.8) {support $\mathcal{S}(q)$: partners of $s$ and past objects of $(s,a)$};
+\node[font=\tiny, text=cGrey, anchor=west] at (0.4,-4.2) {dyad streams, most recent first; token $=$ (typed relation, elapsed time)};
+
+\node[ent=cO, anchor=west] (d1) at (0.45,-4.8) {$o_1$};
+\node[tok=rB, right=2mm of d1] (t11) {$b$\\$\delta{=}1$};
+\node[tok=rA, right=1.5mm of t11] (t12) {$a$\\$\delta{=}3$};
+\node[tok=cGrey, right=1.5mm of t12, draw=cGrey!60, fill=white, text=cGrey!70] (t13) {pad};
+\node[ent=cP, anchor=west] (d2) at (0.45,-5.5) {$o_2$};
+\node[tok=rA, right=2mm of d2, dashed] (t21) {$a^{-1}$\\$\delta{=}1$};
+\node[tok=rA, right=1.5mm of t21] (t22) {$a$\\$\delta{=}2$};
+\node[tok=cGrey, right=1.5mm of t22, draw=cGrey!60, fill=white, text=cGrey!70] (t23) {pad};
+\node[ent=cP, anchor=west] (d3) at (0.45,-6.2) {$x$};
+\node[tok=rC, right=2mm of d3, dashed] (t31) {$c^{-1}$\\$\delta{=}3$};
+\node[tok=cGrey, right=1.5mm of t31, draw=cGrey!60, fill=white, text=cGrey!70] (t32) {pad};
+\node[tok=cGrey, right=1.5mm of t32, draw=cGrey!60, fill=white, text=cGrey!70] (t33) {pad};
+
+\node[font=\tiny, text=cGrey, anchor=west, align=left] at (0.4,-6.95) {$+$ eight statistics per candidate (counts, recency, mean gap of the triple and of the dyad)\\$+$ each candidate's own $P_2$ most recent typed edges, e.g.\ $x \xrightarrow{\ b\ } o'$ at $t-2$};
+
+\node[blk=cPath, anchor=west, minimum width=28mm] (hop) at (5.2,-5.15) {second hop\\$s \to x \xrightarrow{b,\ \delta=2} o'$};
+\node[font=\tiny, text=cPath, anchor=west, text width=36mm] at (5.2,-6.0) {$o'$ never interacted with $s$: no dyad stream, reached only through $x$};
+
+% ══════════════════════════ PANEL B: mechanism ══════════════════════════
+\node[panel=cStruct, minimum width=7.3cm, minimum height=8.1cm, anchor=north west] (PB) at (11.0,0) {};
+\node[ptitle=cStruct] at (11.15,-0.1) {B\quad Intensities and their superposition};
+
+\node[bb=cDyad, anchor=north west] (enc) at (11.25,-0.7) {Transformer over\\$[\,\mathbf{q}_r;\ \mathbf{x}_1;\dots;\mathbf{x}_L]$\\$\mathbf{x}_i = \mathbf{E}_\rho[\rho_i] + \phi(\delta_i)$\\read-out $\to \mathbf{z}_{so}$};
+\node[bb=cComp, anchor=north west] (cmp) at (11.25,-2.35) {attention across candidates\\$\mathbf{h}'_{so_1}, \mathbf{h}'_{so_2}, \mathbf{h}'_{sx}$\\see each other};
+\draw[carr=cDyad] (enc) -- (cmp);
+\node[bb=cDyad, fill=cDyad!12, anchor=north west] (ld) at (11.25,-3.65) {$\log\lambda_{\text{dyad}}(o)$, $o \in \mathcal{S}(q)$};
+\draw[carr=cComp] (cmp) -- (ld);
+
+\node[bb=cPath, anchor=north west] (pth) at (14.75,-0.7) {forward $\mathbf{h}'_{sx}$ along\\the edges of $x$\\$(\mathbf{W}_u\mathbf{h}'_{sx}) \odot \mathbf{e}(b,\delta{=}2)$\\arrives at $o'$};
+\node[bb=cPath, fill=cPath!12, anchor=north west] (lp) at (14.75,-3.65) {$\log\lambda_{\text{path}}(o')$, two hops};
+\draw[carr=cPath] (pth) -- (lp);
+\draw[carr=cPath, dashed] (cmp.east) -- ++(0.2,0) |- (pth.west);
+
+\node[bb=cStruct, fill=cStruct!12, anchor=north west] (ls) at (11.25,-4.55) {$\log\lambda_{\text{struct}}(o)$, all $N$\\evolved $\mathbf{E}_t$, ConvTransE};
+\node[bb=cPop, fill=cPop!12, anchor=north west] (lpop) at (14.75,-4.55) {$\log\lambda_{\text{pop}}(o)$, all $N$\\decayed counts of $(a,o)$, $o$};
+
+\node[font=\tiny\bfseries, text=cStruct, anchor=west] at (11.25,-5.6) {$\lambda(o) = \lambda_{\text{struct}} + \lambda_{\text{pop}} + \lambda_{\text{dyad}} + \lambda_{\text{path}}$ \quad {\mdseries\textcolor{cGrey}{($\operatorname{logaddexp}$ of the four)}}};
+\begin{scope}[shift={(11.5,-7.75)}]
+  \draw[cGrey] (0,0) -- (5.9,0);
+  \foreach \i/\lab/\hs/\hp/\hd/\hpa in {0/$o_1$/0.25/0.15/0.95/0.0, 1/$o_2$/0.22/0.12/0.55/0.0, 2/$x$/0.18/0.10/0.30/0.0, 3/$o'$/0.15/0.08/0.0/0.45, 4/$\cdots$/0.12/0.07/0.0/0.0} {
+    \fill[cStruct!70] (\i*1.2+0.2,0) rectangle ++(0.5,\hs);
+    \fill[cPop!70]    (\i*1.2+0.2,\hs) rectangle ++(0.5,\hp);
+    \fill[cDyad!80]   (\i*1.2+0.2,\hs+\hp) rectangle ++(0.5,\hd);
+    \fill[cPath!85]   (\i*1.2+0.2,\hs+\hp+\hd) rectangle ++(0.5,\hpa);
+    \node[font=\tiny, anchor=north] at (\i*1.2+0.45,-0.03) {\lab};
+  }
+  \node[font=\tiny, text=cGrey, anchor=south west] at (0,1.5) {intensities add: $o_1$ ranks first, $o'$ is reachable};
+  \foreach \i/\c/\l in {0/cStruct!70/struct, 1/cPop!70/pop, 2/cDyad!80/dyad, 3/cPath!85/path} {
+    \fill[\c] (1.9+\i*1.0,1.15) rectangle ++(0.2,0.15); \node[font=\tiny, anchor=west, text=cGrey] at (2.1+\i*1.0,1.22) {\l}; }
+\end{scope}
+
+% evidence flows from A into B
+\draw[carr=cDyad] (10.6,-5.3) -- ++(0.3,0) |- (enc.west);
+\node[font=\tiny, text=cDyad, anchor=south west, rotate=90] at (10.78,-5.2) {streams};
+\node[font=\tiny, text=cPath, anchor=north west, text width=30mm] at (15.0,-2.5) {uses the state of $x$ after competition and the edges of $x$ from panel A};
+
+% ══════════════════════════ legend ══════════════════════════
+\node[anchor=north west, font=\tiny, text=cGrey, align=left] at (0,-8.25) {%
+  relation types: \textcolor{rA}{$a$} consult,\ \textcolor{rB}{$b$} make visit,\ \textcolor{rC}{$c$} criticize;\ dashed $=$ inverse direction;\ %
+  \textcolor{cDyad}{$\bullet$} query subject,\ \textcolor{cO}{$\bullet$} answer,\ \textcolor{cP}{$\bullet$} other partners,\ \textcolor{cX}{$\bullet$} entity reached only by a path};
+\end{tikzpicture}

@@ -1,7 +1,7 @@
 \section{\model{}}
 \label{sec:method}
 
-\begin{figure*}[t]
+\begin{figure*}[!tb]
   \centering
   \figfile{fig_framework}{\textwidth}
   \caption{\textbf{\model{} on a worked example.} \textbf{(A)} For the query $(s, a, ?, t)$ the model reads, from the snapshots before $t$, the support of $s$ (its recent partners and the past objects of $(s, a)$) and, for every candidate, the \emph{dyad stream}: the typed, timestamped events between $s$ and that candidate in either direction, most recent first, here $o_1$: $(b, 1), (a, 3)$; $o_2$: $(a^{-1}, 1), (a, 2)$; $x$: $(c^{-1}, 3)$. Eight summary statistics of the full history and each candidate's own most recent typed edges complete the evidence; $o'$, which never interacted with $s$, is reached only through the edge $x \xrightarrow{b} o'$. \textbf{(B)} A Transformer with the query relation as read-out token encodes each stream; the candidates of the query attend to one another; a linear read-out gives the dyadic intensity on the support. Each candidate's state is forwarded along its own typed edges and summed at the second-hop entity, giving the path intensity. The structural intensity (snapshot evolution, ConvTransE) and the popularity intensity (multi-scale decayed counts) score every entity. The four intensities add: $o_1$, with the richest stream, ranks first, and $o'$ is reachable although no dyad connects it to $s$.}

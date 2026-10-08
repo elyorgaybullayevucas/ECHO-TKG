@@ -1,0 +1,59 @@
+% Introduction figure: what a copy mechanism sees versus what the dyad
+% sees, on an ICEWS-style example. Entity names are illustrative.
+\begin{tikzpicture}[
+  x=1cm, y=1cm, font=\scriptsize,
+  panel/.style={rounded corners=6pt, draw=#1!50, fill=#1!5, line width=0.6pt},
+  ptitle/.style={font=\scriptsize\bfseries, text=#1, anchor=north west},
+  ent/.style={rounded corners=2.5pt, draw=#1, fill=#1!15, minimum height=5.2mm, minimum width=15mm, inner xsep=4pt, font=\scriptsize\bfseries, text=#1!65!black, line width=0.7pt},
+  edg/.style={-{Stealth[length=1.6mm]}, line width=0.8pt, #1},
+  lab/.style={font=\tiny, text=#1, fill=white, inner sep=1pt, sloped, midway},
+  note/.style={font=\tiny, text=cGrey, align=left},
+]
+\definecolor{rA}{HTML}{1F77B4}   % consult
+\definecolor{rB}{HTML}{2CA02C}   % sign agreement
+\definecolor{rC}{HTML}{D62728}   % criticize
+\definecolor{rD}{HTML}{8E6BBF}   % veto / other
+\definecolor{cS}{HTML}{2A6F97}   % subject
+\definecolor{cAns}{HTML}{C0392B} % answer
+\definecolor{cOth}{HTML}{E07A1F} % other partners
+
+% ── query strip ──────────────────────────────────────────────────────────
+\node[draw=cGrey!60, fill=cLight, rounded corners=4pt, inner sep=5pt, font=\scriptsize, anchor=north west] (q) at (0,0)
+  {query: (\textbf{United States},\ \textcolor{rA}{\textbf{consult}},\ ?,\ \textbf{Sep 14})\qquad true answer: \textcolor{cAns}{\textbf{Russia}}};
+
+% ══════════ left panel: what a copy mechanism sees ══════════
+\node[panel=cGrey, minimum width=8.3cm, minimum height=5.7cm, anchor=north west] (PL) at (0,-0.85) {};
+\node[ptitle=cGrey!80!black] at (0.15,-0.95) {What a copy mechanism reads: (United States, consult, $\cdot$)};
+
+\node[ent=cS] (usL) at (1.6,-3.4) {United States};
+\node[ent=cOth] (cnL) at (6.4,-2.2) {China};
+\node[ent=cOth] (jpL) at (6.4,-3.4) {Japan};
+\node[ent=cOth] (unL) at (6.4,-4.6) {UN};
+\draw[edg=rA] (usL) -- node[lab=rA, above] {consult, Sep 2} (cnL);
+\draw[edg=rA] (usL) -- node[lab=rA, above] {consult, Aug 21} (jpL);
+\draw[edg=rA] (usL) -- node[lab=rA, below] {consult, Jul 30} (unL);
+\node[note, anchor=north west, text width=78mm] at (0.25,-5.15) {candidates: China, Japan, UN. \textbf{Russia is not in this history}: the pair (United States, consult, Russia) never occurred, so every copy score is zero for it. On ICEWS18 this is the case for 23\% of all test queries.};
+
+% ══════════ right panel: what the dyad sees ══════════
+\node[panel=cDyad, minimum width=9.2cm, minimum height=5.7cm, anchor=north west] (PR) at (8.6,-0.85) {};
+\node[ptitle=cDyad] at (8.75,-0.95) {What \model{} reads: the dyad (United States, Russia), every relation, both directions};
+
+\node[ent=cS] (usR) at (10.3,-3.4) {United States};
+\node[ent=cAns] (ruR) at (16.3,-3.4) {Russia};
+% several typed, dated events between the two, both directions
+\draw[edg=rB] (usR.north east) to[bend left=38] node[lab=rB, above] {sign formal agreement, Sep 12} (ruR.north west);
+\draw[edg=rC] ([yshift=1.2mm]usR.east) to[bend left=12] node[lab=rC, above] {criticize, Sep 9} ([yshift=1.2mm]ruR.west);
+\draw[edg=rC] ([yshift=-1.2mm]ruR.west) to[bend left=12] node[lab=rC, below] {criticize, Sep 6} ([yshift=-1.2mm]usR.east);
+\draw[edg=rD] (ruR.south west) to[bend left=38] node[lab=rD, below] {make statement, Aug 30} (usR.south east);
+\draw[edg=rA, dashed] (usR.north) to[bend left=60] node[lab=rA, above] {consult?\ \ Sep 14} (ruR.north);
+
+\node[note, anchor=north west, text width=88mm] at (8.85,-5.15) {The dyad stream of (United States, Russia) is \textcolor{rB}{agreement}, \textcolor{rC}{criticize}, \textcolor{rC}{criticize}$^{-1}$, \textcolor{rD}{statement}$^{-1}$, with their times. A Transformer over this typed, ordered stream, read out for the query relation \textcolor{rA}{consult}, gives Russia an intensity although no consult ever linked them.};
+
+% ── bottom strip: strata ──────────────────────────────────────────────────
+\node[anchor=north west, font=\tiny, text=cGrey] at (0,-6.75) {ICEWS18 test queries by what the answer's history contains:};
+\begin{scope}[shift={(0,-7.35)}]
+  \fill[cStruct!75] (0,0) rectangle (9.0,0.32);   \node[font=\tiny, text=white] at (4.5,0.16) {recurrent 50.6\% (copy can see the answer)};
+  \fill[cDyad]      (9.0,0) rectangle (13.2,0.32); \node[font=\tiny, text=white] at (11.1,0.16) {dyad-only 23.4\%};
+  \fill[cGrey!65]   (13.2,0) rectangle (17.8,0.32); \node[font=\tiny, text=white] at (15.5,0.16) {cold 26.0\% (never interacted)};
+\end{scope}
+\end{tikzpicture}

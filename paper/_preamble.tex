@@ -13,6 +13,20 @@
 \usepackage[hidelinks]{hyperref}
 \usepackage[nameinlink,capitalize]{cleveref}
 \usepackage{microtype}
+% float placement: let wide figures sit at the top or bottom of the page
+% they are referenced on, and do not let one deferred figure* hold back
+% every later float
+\usepackage{dblfloatfix}
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\bottomfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.8}
+\renewcommand{\dbltopfraction}{0.95}
+\renewcommand{\dblfloatpagefraction}{0.8}
+\setcounter{topnumber}{3}
+\setcounter{dbltopnumber}{3}
+\setcounter{totalnumber}{5}
+
 \usepackage{caption}
 \captionsetup{font=small,labelfont=bf}
 

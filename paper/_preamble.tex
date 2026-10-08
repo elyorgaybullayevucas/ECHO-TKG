@@ -28,6 +28,12 @@
 \definecolor{cGrey}{HTML}{6B6B6B}
 \definecolor{cLight}{HTML}{F2F4F7}
 
+
+% Figures: use the pre-rendered PDF when it exists (fast on Overleaf's free
+% plan), otherwise draw the TikZ source. build_figs.sh makes the PDFs.
+\newcommand{\figfile}[2]{%
+  \IfFileExists{figures/#1.pdf}{\includegraphics[width=#2]{figures/#1.pdf}}{\input{figures/#1}}}
+
 \newcommand{\model}{ECHO}
 \newcommand{\hone}{H@1}
 \newcommand{\hten}{H@10}

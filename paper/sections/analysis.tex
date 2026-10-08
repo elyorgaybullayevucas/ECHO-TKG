@@ -62,7 +62,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \begin{figure}[t]
   \centering
-  \input{figures/fig_ablation_strata}
+  \figfile{fig_ablation_strata}{\linewidth}
   \caption{\textbf{Where each part acts} (ICEWS18, seed 1, change of MRR per stratum when the part is removed). The path intensity is paid for on cold-2hop; the relation types on blocked; the stream on dyad-only and blocked; the structural branch on both cold strata. Removing the whole dyadic branch costs 3.5 on dyad-only, 5.1 on blocked and 17.4 on clean, off the scale of this plot.}
   \label{fig:ablation-strata}
 \end{figure}
@@ -75,7 +75,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \begin{figure}[t]
   \centering
-  \input{figures/fig_strata_results}
+  \figfile{fig_strata_results}{\linewidth}
   \caption{\textbf{MRR by stratum on the three event datasets} (three seeds). The profile is the same on all three: the clean stratum is solved, the blocked and dyad-only strata are where a copy mechanism fails and where \model{} earns its margin, and the two cold strata are where the remaining headroom lies. GDELT, whose fifteen-minute snapshots make every stratum sparser, is lower everywhere but keeps the ordering.}
   \label{fig:strata-results}
 \end{figure}

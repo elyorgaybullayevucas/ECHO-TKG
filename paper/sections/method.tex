@@ -3,7 +3,7 @@
 
 \begin{figure*}[t]
   \centering
-  \input{figures/fig_overview}
+  \figfile{fig_overview}{\textwidth}
   \caption{\textbf{Overview of \model{}.} A query $(s, r, ?, t)$ is scored by four intensities that are added as intensities, never gated. The \textcolor{cStruct}{structural} intensity evolves entity states through the last $H$ snapshots and decodes against every entity. The \textcolor{cPop}{popularity} intensity scores every entity from multi-scale decayed counts of $(r, o)$ and of $o$. The \textcolor{cDyad}{dyadic} intensity builds the support of $s$, encodes each candidate's typed event stream with a Transformer whose read-out token is the query relation, lets the candidates of the query \textcolor{cComp}{attend to one another}, and scores each one. The \textcolor{cPath}{path} intensity forwards every candidate's state along that candidate's own most recent typed edges and sums the messages arriving at each second-hop entity. The four log-intensities are combined by $\mathrm{logaddexp}$ and trained with one cross-entropy over all $N$ entities.}
   \label{fig:overview}
 \end{figure*}

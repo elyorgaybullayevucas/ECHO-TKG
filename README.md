@@ -145,24 +145,40 @@ test timestamp is the true history, which is the RE-GCN setting.
 
 ## Results
 
-Final code, three seeds (1, 2, 3), time-aware filtered, ties averaged, x100.
-Mean +- standard deviation over seeds. Published numbers are the papers'
-own; LogCL was re-run in this protocol by the authors of this repository
-and lands at about 36.0 on ICEWS18.
+Final code, three seeds (1, 2, 3), time-aware filtered, ties averaged, x100,
+mean +- standard deviation. Published numbers are the papers' own; LogCL was
+re-run in this protocol by the authors of this repository and lands at
+about 36.0 on ICEWS18.
 
 | dataset | MRR | H@1 | H@3 | H@10 | strongest published (MRR / H@1) |
 |---|---|---|---|---|---|
 | YAGO | **91.82** +- 0.20 | **90.57** +- 0.44 | 92.91 | 93.23 | DaeMon 91.59 / 90.03 |
 | WIKI | **83.41** +- 0.12 | **80.44** +- 0.26 | **86.04** | 87.39 | CognTKE 83.21; DaeMon 82.38 / 78.26 |
-| GDELT | 27.01 +- 0.03 | **18.05** +- 0.03 | 29.81 | 44.60 | CID-TKG 27.41 / 17.76 (no code); HisRES 26.58 / 16.90 |
-| ICEWS18 | 36.29 +- 0.04 | 26.10 +- 0.04 | 40.96 | 56.06 | LogCL 35.67 (36.0 re-run); CID-TKG 38.88 (no code) |
-| ICEWS14s | 47.18 +- 0.04 | 37.19 +- 0.11 | 52.43 | 66.16 | LogCL 48.87; DiMNet 45.72 |
+| GDELT | 27.10 +- 0.02 | **18.16** +- 0.00 | 29.89 | 44.62 | CID-TKG 27.41 / 17.76 (no code); HisRES 26.58 / 16.90 |
+| ICEWS18 | 36.54 +- 0.10 | 26.36 +- 0.07 | 41.18 | 56.21 | LogCL 35.67 (36.0 re-run); CID-TKG 38.88 (no code) |
+| ICEWS14s | 47.43 +- 0.14 | 37.49 +- 0.14 | 52.70 | 66.16 | LogCL 48.87; DiMNet 45.72 |
 
 What this does and does not say. On YAGO and WIKI ECHO is above every
 published number we found on MRR and H@1. On GDELT it has the best H@1 and
-is 0.4 MRR behind a preprint without code. On ICEWS18 and ICEWS14s it is
+is 0.3 MRR behind a preprint without code. On ICEWS18 and ICEWS14s it is
 above every model with released code that we could run in this protocol,
 and behind HisRES, CID-TKG and CHE-TKG, none of which has code.
+
+One per-dataset switch: competition across candidates is on for the event
+datasets and off for YAGO and WIKI. Validation MRR makes that choice on all
+five (ICEWS18 36.92 vs 36.70, ICEWS14s 48.99 vs 48.81, GDELT 27.45 vs 27.38
+for it; YAGO 87.41 vs 87.14, WIKI 83.38 vs 83.29 against it), and the test
+numbers of the other setting are in the table below. Everything else is
+shared across datasets except dropout, stream length, support sizes,
+history length and the structural auxiliary weight, as in `echo/config.py`.
+
+| dataset | without competition | with competition |
+|---|---|---|
+| ICEWS18 | 36.29 +- 0.04 / 26.10 | **36.54 +- 0.10 / 26.36** |
+| ICEWS14s | 47.18 +- 0.04 / 37.19 | **47.43 +- 0.14 / 37.49** |
+| GDELT | 27.01 +- 0.01 / 18.05 | **27.10 +- 0.02 / 18.16** |
+| WIKI | **83.41 +- 0.12 / 80.44** | 83.28 +- 0.17 / 80.22 |
+| YAGO | **91.82 +- 0.20 / 90.57** | 91.62 +- 0.12 / 90.33 |
 
 ### Strata (ICEWS18, three seeds)
 
@@ -174,24 +190,32 @@ and behind HisRES, CID-TKG and CHE-TKG, none of which has code.
 | blocked | 25.7 % | 34.99 | 16.82 | 72.96 |
 | clean | 23.4 % | 85.64 | 76.65 | 99.02 |
 
-### Ablations, YAGO (seed 1; full model is the 3-seed mean)
+### Ablations
 
-| variant | MRR | H@1 | delta MRR |
-|---|---|---|---|
-| full | 91.82 | 90.57 | |
-| no stream (statistics only) | 91.83 | 90.77 | 0.00 |
-| no relation types in the stream | 91.79 | 90.58 | -0.03 |
-| no popularity field | 91.81 | 90.66 | -0.01 |
-| no path intensity | 91.59 | 90.41 | -0.23 |
-| no candidate context | 91.61 | 90.31 | -0.21 |
-| no prototype | 91.54 | 90.21 | -0.28 |
-| no structural branch | 90.97 | 89.14 | -0.85 |
-| no dyad branch | 67.18 | 61.37 | -24.64 |
+Relative to the model without competition (seed 1 unless a +- is shown; the
+three-seed rows are means). Deltas are MRR.
 
-On YAGO the eight dyad statistics carry the dyad branch on their own; the
-sequence encoder and the relation types add nothing there, as the
-diagnostic predicted (dyad_only is 0.1 % of YAGO). The dyad branch as a
-whole is worth 24.6 MRR. ICEWS18 ablations are running.
+| removed | ICEWS18 MRR / H@1 | delta | YAGO MRR / H@1 | delta |
+|---|---|---|---|---|
+| nothing (base, 3 seeds) | 36.29 / 26.10 | | 91.82 / 90.57 | |
+| popularity field | 36.37 / 26.15 | +0.08 | 91.81 / 90.66 | -0.01 |
+| prototype | 36.34 / 26.14 | +0.05 | 91.66 +- 0.19 / 90.42 | -0.16 |
+| candidate context | 36.27 / 26.05 | -0.02 | 91.75 +- 0.16 / 90.53 | -0.07 |
+| path intensity | 35.92 / 25.85 | -0.37 | 91.70 +- 0.12 / 90.51 | -0.12 |
+| relation types in the stream | 35.86 / 25.68 | -0.43 | 91.79 / 90.58 | -0.03 |
+| the stream (statistics only) | 35.71 / 25.57 | -0.58 | 91.83 / 90.77 | +0.01 |
+| structural branch | 35.59 / 25.53 | -0.70 | 90.97 / 89.14 | -0.85 |
+| dyad branch | 30.30 / 20.51 | -5.99 | 67.18 / 61.37 | -24.64 |
+| *added* competition (3 seeds) | 36.54 / 26.36 | +0.25 | 91.62 / 90.33 | -0.20 |
+
+The dyad branch is the model: without it ECHO is RE-GCN. On ICEWS18 the
+stream (+0.58), its relation types (+0.43) and the path (+0.37) each carry
+weight, and the seed spread is 0.04. On YAGO the eight dyad statistics carry
+the branch alone and the stream, its types, the path, context, prototype and
+competition are all inside the seed spread, which is what the diagnostic
+predicted: the strata those parts address (dyad_only, cold_2hop) are 0.1 %
+of YAGO. Popularity, prototype and context are null on both datasets and
+are kept only for the ablation table.
 
 ### Earlier development runs (ICEWS18, seed 42)
 

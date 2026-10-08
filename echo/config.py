@@ -22,10 +22,15 @@ DATASETS = {
                     dyad_support=64, triple_support=48, stream_len=8),
     # YAGO / WIKI: facts persist for years, so the question is whether a
     # fact is still running, and a longer stream sees the whole run.
+    # Competition across candidates is off here: validation MRR prefers it
+    # off on both (YAGO 87.41 vs 87.14, WIKI 83.38 vs 83.29) and on for the
+    # event datasets (ICEWS18 36.92 vs 36.70, ICEWS14s 48.99 vs 48.81,
+    # GDELT 27.45 vs 27.38). The dyad_only stratum, where candidates of one
+    # query compete, is 0.1 % of YAGO and WIKI.
     "YAGO":    dict(_C, dropout=0.15, struct_aux=0.0, dyad_support=48,
-                    stream_len=16, label_smoothing=0.05),
+                    stream_len=16, label_smoothing=0.05, compete=False),
     "WIKI":    dict(_C, dropout=0.15, struct_aux=0.0, dyad_support=48,
-                    stream_len=16, label_smoothing=0.05),
+                    stream_len=16, label_smoothing=0.05, compete=False),
 }
 
 
@@ -68,7 +73,7 @@ class EchoConfig:
     no_proto: bool = False      # no prototype intensity over all entities
     no_ctx: bool = False        # no candidate-activity context in the trunk
     compete: bool = True        # attention across the candidates of a query;
-                                # +0.25 MRR on ICEWS18 over 3 seeds. --no_compete
+                                # per-dataset default above; --no_compete / --compete
     no_pop: bool = False        # no popularity field
     no_struct: bool = False     # no structural branch
     eval_only: bool = False
@@ -90,7 +95,13 @@ def parse_args(argv=None):
     for f in fields(EchoConfig):
         if f.name == "dataset" or f.name == "hits_at":
             continue
-        if f.type is bool and f.default is True:
+        if f.name == "compete":
+            g = p.add_mutually_exclusive_group()
+            g.add_argument("--compete", dest="compete", action="store_true",
+                           default=None)
+            g.add_argument("--no_compete", dest="compete",
+                           action="store_false", default=None)
+        elif f.type is bool and f.default is True:
             p.add_argument(f"--no_{f.name}", dest=f.name, action="store_false")
         elif f.type is bool:
             p.add_argument(f"--{f.name}", action="store_true")
@@ -102,8 +113,8 @@ def parse_args(argv=None):
         if v is None or v is False:
             continue
         base[k] = v
-    if not a.compete:
-        base["compete"] = False
+    if a.compete is not None:
+        base["compete"] = a.compete
     cfg = EchoConfig(**base)
     if cfg.num_workers < 0:
         # fork is cheap on Linux; Windows would re-import and copy the index

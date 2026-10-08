@@ -90,7 +90,13 @@ def set_seed(s):
 def variant_of(cfg):
     off = [k[3:] for k in ("no_struct", "no_pop", "no_dyad", "no_path", "no_proto", "no_ctx",
                            "no_stream", "no_type") if getattr(cfg, k)]
-    if not cfg.compete:
+    # competition is a per-dataset default; the variant name records only a
+    # departure from that default
+    from echo.config import DATASETS, EchoConfig
+    default = DATASETS[cfg.dataset].get("compete", EchoConfig.compete)
+    if cfg.compete and not default:
+        return ("full" if not off else "no-" + "-".join(off)) + "+compete"
+    if not cfg.compete and default:
         off.append("compete")
     return "full" if not off else "no-" + "-".join(off)
 

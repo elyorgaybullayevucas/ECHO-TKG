@@ -1,9 +1,7 @@
-% Introduction figure, v4: for a reader with no background. Three stages
-% read left to right, plain words, no symbols:
-%   1  what happened: countries linked by dated events
-%   2  the question, and two ways of reading the past
-%   3  the answer
-% Badges instead of flags; names and dates are illustrative.
+% Introduction figure, v5: one picture for a reader with no background.
+% Countries linked by dated, typed events; the question drawn in as a dashed
+% arrow; below, how ECHO answers it: it reads every event between the two
+% countries, in order, and ranks Russia first. Names and dates are illustrative.
 \tikzset{
   % vector flags, clipped to a disc of radius R (pic argument), drawn at the pic origin
   pics/flagUS/.style={code={\begin{scope}\clip (0,0) circle (#1);
@@ -50,51 +48,34 @@
 \definecolor{cAns}{HTML}{C0392B}
 
 % ═══════════════ stage 1: what happened ═══════════════
-\node[stage=cGrey, minimum width=62mm, minimum height=74mm, anchor=north west] (S1) at (0,0) {};
-\node[stitle=cGrey] at (3.1,-0.15) {1\quad What happened so far};
-\node[font=\tiny, text=cGrey, anchor=north] at (3.1,-0.6) {countries, linked by events that have a type and a date};
+
+
+
 \def\countryname{United States}\node[country={cDyad}{US}, minimum size=11mm] (us) at (2.6,-3.9) {};
 \def\countryname{Russia}\node[country={cAns}{RU}] (ru) at (5.45,-2.15) {};
 \def\countryname{China}\node[country={cGrey}{CN}] (cn) at (0.65,-3.2) {};
 \def\countryname{Japan}\node[country={cGrey}{JP}] (jp) at (0.95,-5.75) {};
-\def\countryname{UN}\node[country={cGrey}{UN}] (un) at (1.5,-1.35) {};
+\def\countryname{UN}\node[country={cGrey}{UN}] (un) at (1.15,-1.55) {};
 \def\countryname{Germany}\node[country={cGrey}{DE}] (de) at (5.0,-5.85) {};
 \draw[edg=rA] (us) to[bend left=12] node[lab=rA] {consult\\Feb 16} (cn);
 \draw[edg=rA] (us) to[bend left=12] node[lab=rA] {consult\\Mar 1} (jp);
 \draw[edg=rA] (us) to[bend left=10] node[lab=rA, pos=0.55] {consult\\Jan 20} (un);
-\draw[dedg=rB] (us.north east) to[bend left=35] node[lab=rB, pos=0.5] {sign agreement\\Jan 15} (ru.north west);
+\draw[dedg=rB] (us.north east) to[bend left=35] node[lab=rB, pos=0.62] {sign agreement\\Jan 15} (ru.north west);
 \draw[dedg=rC] (us.east) -- node[lab=rC, pos=0.55] {criticize\\Mar 1} (ru.south west);
 \draw[dedg=rD] (ru.south) to[bend left=30] node[lab=rD, pos=0.62] {make statement\\Mar 13} (us.south east);
 \draw[edg=rC] (us) to[bend right=12] node[lab=rC] {threaten\\Feb 27} (de);
 \draw[edg=rB] (ru.south east) to[bend left=15] node[lab=rB, pos=0.7] {sign agreement\\Feb 20} (de.north east);
-\node[font=\tiny, text=cGrey, anchor=south, text width=58mm, align=center] at (3.1,-7.2) {bold arrows: everything that happened between the United States and Russia, in both directions};
-
-% ═══════════════ stage 2: the question and two readings ═══════════════
-\draw[big] (6.35,-3.7) -- (7.15,-3.7);
-\node[stage=cDyad, minimum width=62mm, minimum height=74mm, anchor=north west] (S2) at (7.3,0) {};
-\node[stitle=cDyad] at (10.4,-0.15) {2\quad The question, read two ways};
-\node[draw=cDyad, fill=cDyad!12, rounded corners=4pt, inner sep=4pt, font=\scriptsize\bfseries, anchor=north] at (10.4,-0.75) {Whom will the United States consult on Mar 14?};
-
-\node[card=cGrey, anchor=north] (old) at (10.4,-1.75) {\textbf{The usual way:} look only at whom the US \textcolor{rA}{consulted} before.\\[3pt]
-  \tikz[baseline]{\node[ev=rA] (a) {China}; \node[ev=rA, right=2pt of a] (b) {Japan}; \node[ev=rA, right=2pt of b] (c) {UN};}\\[3pt]
-  \textcolor{cAns}{Russia is not on this list, so it cannot be the answer.}};
-
-\node[card=cDyad, anchor=north] (new) at (10.4,-4.25) {\textbf{\model{}:} look at everything that happened between the US and each country, in order.\\[3pt]
-  \textbf{US \& Russia:}\\[1pt]
-  \tikz[baseline]{\node[ev=rD] (a) {statement\\Mar 13}; \node[ev=rC, right=2pt of a] (b) {criticize\\Mar 1}; \node[ev=rB, right=2pt of b] (c) {agreement\\Jan 15};}\\[3pt]
-  Two countries this busy with each other are likely to talk next, even though they have not ``consulted'' before.};
-
-% ═══════════════ stage 3: the answer ═══════════════
-\draw[big] (13.65,-3.7) -- (14.45,-3.7);
-\node[stage=cStruct, minimum width=44mm, minimum height=74mm, anchor=north west] (S3) at (14.6,0) {};
-\node[stitle=cStruct] at (16.8,-0.15) {3\quad The answer};
-\node[font=\tiny, text=cGrey, anchor=north, text width=40mm, align=center] at (16.8,-0.7) {\model{} ranks every country; the true answer was Russia};
-\begin{scope}[shift={(15.0,-5.6)}]
-  \draw[cGrey] (-0.15,0) -- (3.75,0);
-  \foreach \i/\h/\c/\l in {0/3.4/cAns/Russia, 1/2.0/cGrey/China, 2/1.5/cGrey/Japan, 3/1.05/cGrey/UN, 4/0.65/cGrey/Germany} {
-    \fill[\c!75] (\i*0.75,0) rectangle ++(0.5,\h);
-    \node[anchor=north, font=\tiny, rotate=0] at (0.25+\i*0.75,-0.05) {\l};}
-  \node[font=\scriptsize\bfseries, text=cAns, anchor=south] at (0.25,3.45) {1st};
-\end{scope}
-\node[font=\tiny, text=cGrey, anchor=north, text width=40mm, align=center] at (16.8,-6.1) {the usual way would have put China first and Russia last};
+% the question, drawn into the graph
+\draw[-{Stealth[length=2.2mm]}, line width=1.3pt, cDyad, dashed] (us.north west) to[bend left=70] node[lab=cDyad, pos=0.62, font=\scriptsize\bfseries, fill=cDyad!8, above=1.5mm] {whom will the United States\\consult on March 14?} (ru.north);
+% how ECHO answers: it reads the whole story between the two countries, in order
+\node[draw=cDyad!60, fill=cDyad!4, rounded corners=5pt, line width=0.6pt, minimum width=82mm, minimum height=16mm, anchor=north west] (box) at (-0.9,-7.0) {};
+\node[font=\scriptsize\bfseries, text=cDyad!70!black, anchor=north west] at (-0.7,-7.1) {\model{} reads the whole story between the two, in order};
+\node[ev=rB] (e1) at (0.3,-8.2) {sign agreement\\Jan 15};
+\node[ev=rC] (e2) at (2.1,-8.2) {criticize\\Mar 1};
+\node[ev=rD] (e3) at (3.85,-8.2) {make statement\\Mar 13};
+\draw[-{Stealth[length=1.4mm]}, cGrey] (e1) -- (e2);
+\draw[-{Stealth[length=1.4mm]}, cGrey] (e2) -- (e3);
+\node[font=\scriptsize\bfseries, text=cAns, anchor=west, align=left] at (5.55,-8.2) {Russia\\ranked first};
+\draw[-{Stealth[length=1.6mm]}, line width=0.9pt, cAns] (e3.east) -- (5.5,-8.2);
+\node[font=\tiny, text=cGrey, anchor=north, text width=80mm, align=center] at (3.2,-9.0) {no past \textcolor{rA}{consult} links the US to Russia, so a method that only copies past answers cannot name it; the bold arrows do};
 \end{tikzpicture}

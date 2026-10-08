@@ -110,7 +110,7 @@
 \node[font=\tiny\bfseries, text=cStruct, anchor=west] at (11.25,-5.6) {$\lambda(o) = \lambda_{\text{struct}} + \lambda_{\text{pop}} + \lambda_{\text{dyad}} + \lambda_{\text{path}}$ \quad {\mdseries\textcolor{cGrey}{($\operatorname{logaddexp}$ of the four)}}};
 \begin{scope}[shift={(11.5,-7.75)}]
   \draw[cGrey] (0,0) -- (5.9,0);
-  \foreach \i/\lab/\hs/\hp/\hd/\hpa in {0/$o_1$/0.25/0.15/0.95/0.0, 1/$o_2$/0.22/0.12/0.55/0.0, 2/$x$/0.18/0.10/0.30/0.0, 3/$o'$/0.15/0.08/0.0/0.45, 4/$\cdots$/0.12/0.07/0.0/0.0} {
+  \foreach \i/\lab/\hs/\hp/\hd/\hpa in {0/$o_1$/0.25/0.15/0.95/0.0, 1/$o_2$/0.22/0.12/0.55/0.12, 2/$x$/0.18/0.10/0.30/0.0, 3/$o'$/0.15/0.08/0.0/0.45, 4/$\cdots$/0.12/0.07/0.0/0.0} {
     \fill[cStruct!70] (\i*1.2+0.2,0) rectangle ++(0.5,\hs);
     \fill[cPop!70]    (\i*1.2+0.2,\hs) rectangle ++(0.5,\hp);
     \fill[cDyad!80]   (\i*1.2+0.2,\hs+\hp) rectangle ++(0.5,\hd);
@@ -129,6 +129,6 @@
 
 % ══════════════════════════ legend ══════════════════════════
 \node[anchor=north west, font=\tiny, text=cGrey, align=left] at (0,-8.25) {%
-  relation types: \textcolor{rA}{$a$} consult,\ \textcolor{rB}{$b$} make visit,\ \textcolor{rC}{$c$} criticize;\ dashed $=$ inverse direction;\ %
+  relation types: \textcolor{rA}{$a$} consult,\ \textcolor{rB}{$b$} make visit,\ \textcolor{rC}{$c$} criticize;\ dashed $=$ inverse direction;\ grey edges $=$ other relations;\ %
   \textcolor{cDyad}{$\bullet$} query subject,\ \textcolor{cO}{$\bullet$} answer,\ \textcolor{cP}{$\bullet$} other partners,\ \textcolor{cX}{$\bullet$} entity reached only by a path};
 \end{tikzpicture}

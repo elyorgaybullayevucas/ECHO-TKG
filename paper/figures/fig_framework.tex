@@ -42,7 +42,7 @@
 \node[mod=cDyad, text width=28mm, anchor=north] (tenc) at (1.75,-2.95) {time code $\phi(\delta_i)$\\$\sin,\cos$ of $\log(1{+}\delta_i)$};
 \node[oplus] (plus1) at (1.75,-3.85) {$+$};
 \draw[arr] (remb) -- (tenc); \draw[arr] (tenc) -- (plus1);
-\node[mod=cDyad, anchor=west, minimum width=10mm] (qtok) at (0.12,-3.85) {read-out $\mathbf{q}_r$\$\mathbf{E}_q[r]+\mathbf{W}_s\mathbf{E}_t[s]$};
+\node[mod=cDyad, anchor=west, minimum width=10mm] (qtok) at (0.12,-3.85) {read-out $\mathbf{q}_r$\\$\mathbf{E}_q[r]+\mathbf{W}_s\mathbf{E}_t[s]$};
 \foreach \k/\yy in {1/-4.3, 2/-5.55} {
   \node[unit=cDyad, minimum width=31mm, minimum height=11.5mm, anchor=north] (blk\k) at (1.75,\yy) {};
   \node[mod=cDyad, minimum width=27mm, anchor=north] at (1.75,\yy-0.08) {multi-head self-attention};

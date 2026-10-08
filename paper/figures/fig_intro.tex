@@ -1,76 +1,71 @@
-% Introduction figure, v2: three dated panels of the query subject's
-% neighbourhood, a relevance strip, and the two readings of the same
-% history (triple view vs dyad view) with the prediction. Entities are
-% badges, no images. Names and dates are illustrative.
+% Introduction figure, v4: for a reader with no background. Three stages
+% read left to right, plain words, no symbols:
+%   1  what happened: countries linked by dated events
+%   2  the question, and two ways of reading the past
+%   3  the answer
+% Badges instead of flags; names and dates are illustrative.
 \begin{tikzpicture}[
-  x=1cm, y=1cm, font=\tiny,
-  panel/.style={draw=cGrey!60, fill=white, rounded corners=4pt, line width=0.5pt},
-  badge/.style={circle, draw=#1, fill=#1!18, minimum size=5.4mm, inner sep=0pt, font=\tiny\bfseries, text=#1!65!black, line width=0.7pt},
-  subj/.style={badge=cDyad, fill=cDyad, text=white, minimum size=6mm},
-  edg/.style={-{Stealth[length=1.3mm]}, line width=0.6pt, #1},
-  dedg/.style={-{Stealth[length=1.5mm]}, line width=1.1pt, #1},
-  lab/.style={font=\tiny, text=#1, pos=0.5, fill=white, inner sep=0.6pt, rounded corners=1pt},
-  arr/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, cGrey!85},
-  box/.style={draw=#1, fill=#1!10, rounded corners=3pt, inner sep=3pt, align=center, line width=0.6pt},
+  x=1cm, y=1cm, font=\scriptsize,
+  stage/.style={draw=#1!60, fill=#1!5, rounded corners=8pt, line width=0.7pt},
+  stitle/.style={font=\small\bfseries, text=#1!70!black, anchor=north},
+  badge/.style={circle, draw=#1, fill=#1!20, minimum size=8.5mm, inner sep=0pt, font=\scriptsize\bfseries, text=#1!65!black, line width=0.9pt, align=center},
+  us/.style={badge=cDyad, fill=cDyad, text=white, minimum size=10mm},
+  edg/.style={-{Stealth[length=1.6mm]}, line width=0.7pt, #1},
+  dedg/.style={-{Stealth[length=1.9mm]}, line width=1.5pt, #1},
+  lab/.style={font=\tiny, text=#1, pos=0.5, fill=white, inner sep=1pt, rounded corners=1.5pt, align=center},
+  big/.style={-{Stealth[length=4mm, width=5mm]}, line width=3pt, cGrey!55},
+  card/.style={draw=#1, fill=white, rounded corners=4pt, inner sep=5pt, align=left, line width=0.7pt, text width=50mm},
+  ev/.style={draw=#1, fill=#1!18, rounded corners=2pt, minimum height=5mm, inner xsep=4pt, font=\tiny, align=center, line width=0.5pt},
 ]
 \definecolor{rA}{HTML}{1F77B4}\definecolor{rB}{HTML}{2CA02C}\definecolor{rC}{HTML}{D62728}\definecolor{rD}{HTML}{8E6BBF}
 \definecolor{cAns}{HTML}{C0392B}
 
-% ── query ───────────────────────────────────────────────────────────────
-\node[box=cDyad, anchor=north west, font=\scriptsize] (Q) at (0,0) {\textbf{Query} at $t_q$:\ (\textbf{US},\ \textcolor{rA}{\textbf{consult}},\ ?)\qquad true answer: \textcolor{cAns}{\textbf{RU}}};
+% ═══════════════ stage 1: what happened ═══════════════
+\node[stage=cGrey, minimum width=62mm, minimum height=74mm, anchor=north west] (S1) at (0,0) {};
+\node[stitle=cGrey] at (3.1,-0.15) {1\quad What happened so far};
+\node[font=\tiny, text=cGrey, anchor=north] at (3.1,-0.6) {countries, linked by events that have a type and a date};
+\node[us] (us) at (2.6,-3.9) {United\\States};
+\node[badge=cAns]  (ru) at (5.4,-2.5) {Russia};
+\node[badge=cGrey] (cn) at (0.75,-2.6) {China};
+\node[badge=cGrey] (jp) at (0.9,-5.6) {Japan};
+\node[badge=cGrey] (un) at (2.4,-1.5) {UN};
+\node[badge=cGrey] (de) at (5.0,-5.7) {Germany};
+\draw[edg=rA] (us) -- node[lab=rA] {consult\\Feb 16} (cn);
+\draw[edg=rA] (us) -- node[lab=rA] {consult\\Mar 1} (jp);
+\draw[edg=rA] (us) -- node[lab=rA] {consult\\Jan 20} (un);
+\draw[dedg=rB] (us.north east) to[bend left=35] node[lab=rB, pos=0.5] {sign agreement\\Jan 15} (ru.north west);
+\draw[dedg=rC] (us.east) -- node[lab=rC, pos=0.5] {criticize\\Mar 1} (ru.south west);
+\draw[dedg=rD] (ru.south) to[bend left=30] node[lab=rD, pos=0.5] {make statement\\Mar 13} (us.south east);
+\draw[edg=rC] (us) -- node[lab=rC] {threaten\\Feb 27} (de);
+\draw[edg=rB] (ru.south east) to[bend left=15] node[lab=rB, pos=0.7] {sign agreement\\Feb 20} (de.north east);
+\node[font=\tiny, text=cGrey, anchor=south, text width=58mm, align=center] at (3.1,-7.2) {bold arrows: everything that happened between the United States and Russia, in both directions};
 
-% ── three dated panels ──────────────────────────────────────────────────
-\foreach \px/\k/\tl in {0/1/$t_q-3$, 4.3/2/$t_q-2$, 8.6/3/$t_q-1$} {
-  \node[panel, minimum width=41mm, minimum height=38mm, anchor=north west] (P\k) at (\px,-0.95) {};
-  \node[font=\scriptsize\bfseries, anchor=north] at (\px+2.05,-1.0) {\tl};
-}
-\begin{scope}[shift={(2.05,-3.05)}]
-  \node[subj] (us1) at (0,0) {US};
-  \node[badge=cGrey] (cn1) at (-1.6,1.0) {CN};  \draw[edg=rA] (us1) -- node[lab=rA] {consult} (cn1);
-  \node[badge=cGrey] (un1) at (-1.6,-1.0) {UN}; \draw[edg=rA] (us1) -- node[lab=rA] {consult} (un1);
-  \node[badge=cAns] (ru1) at (1.6,1.0) {RU};   \draw[dedg=rB] (ru1) -- node[lab=rB] {sign agreement} (us1);
-  \node[badge=cGrey] (jp1) at (1.6,-1.0) {JP}; \draw[edg=rD] (jp1) -- node[lab=rD] {make visit} (us1);
-\end{scope}
-\begin{scope}[shift={(6.35,-3.05)}]
-  \node[subj] (us2) at (0,0) {US};
-  \node[badge=cAns] (ru2) at (1.7,0.45) {RU};
-  \draw[dedg=rC] ([yshift=1.5mm]us2.east) -- node[lab=rC] {criticize} ([yshift=1.5mm]ru2.west);
-  \draw[dedg=rC] ([yshift=-1.5mm]ru2.west) -- node[lab=rC] {criticize} ([yshift=-1.5mm]us2.east);
-  \node[badge=cGrey] (jp2) at (-1.6,1.0) {JP};  \draw[edg=rA] (us2) -- node[lab=rA] {consult} (jp2);
-  \node[badge=cGrey] (cn2) at (-1.6,-1.0) {CN}; \draw[edg=rD] (cn2) -- node[lab=rD] {make statement} (us2);
-  \node[badge=cGrey] (de2) at (1.5,-1.1) {DE};  \draw[edg=rB] (us2) -- node[lab=rB] {sign agreement} (de2);
-\end{scope}
-\begin{scope}[shift={(10.65,-3.05)}]
-  \node[subj] (us3) at (0,0) {US};
-  \node[badge=cAns] (ru3) at (1.6,1.0) {RU};   \draw[dedg=rD] (ru3) -- node[lab=rD] {make statement} (us3);
-  \node[badge=cGrey] (cn3) at (-1.6,1.0) {CN};  \draw[edg=rA] (us3) -- node[lab=rA] {consult} (cn3);
-  \node[badge=cGrey] (un3) at (-1.6,-1.0) {UN}; \draw[edg=rD] (us3) -- node[lab=rD] {make statement} (un3);
-  \node[badge=cGrey] (de3) at (1.6,-1.0) {DE}; \draw[edg=rC] (us3) -- node[lab=rC] {threaten} (de3);
-\end{scope}
-\node[font=\tiny, text=cGrey, anchor=north west, text width=125mm] at (0,-4.95) {bold edges: the events on the dyad (US, RU), in both directions; thin edges: the rest of the subject's neighbourhood. No \textcolor{rA}{consult} edge ever links US and RU.};
+% ═══════════════ stage 2: the question and two readings ═══════════════
+\draw[big] (6.35,-3.7) -- (7.15,-3.7);
+\node[stage=cDyad, minimum width=62mm, minimum height=74mm, anchor=north west] (S2) at (7.3,0) {};
+\node[stitle=cDyad] at (10.4,-0.15) {2\quad The question, read two ways};
+\node[draw=cDyad, fill=cDyad!12, rounded corners=4pt, inner sep=4pt, font=\scriptsize\bfseries, anchor=north] at (10.4,-0.75) {Whom will the United States consult on Mar 14?};
 
-% ── relevance strip ────────────────────────────────────────────────────
-\node[font=\tiny, anchor=west, text=cGrey] at (0,-5.7) {relevance of each snapshot to the query under the two readings of the history:};
-\node[font=\tiny, anchor=east, text=cGrey] at (1.5,-6.15) {triple view};
-\node[font=\tiny, anchor=east, text=cDyad] at (1.5,-6.7) {dyad view};
-\foreach \px/\d in {2.05/0.34, 6.35/0.42, 10.65/0.38} {
-  \fill[cGrey!40] (\px-0.3,-6.2) rectangle ++(0.6,0.03);
-  \fill[cDyad]    (\px-0.3,-6.85) rectangle ++(0.6,\d);
-}
-\node[font=\tiny, text=cGrey, anchor=west] at (0,-7.5) {triple view: zero on every snapshot, RU never appears under consult};
-\node[font=\tiny, text=cDyad, anchor=west] at (0,-7.85) {dyad view: positive on every snapshot, RU is a partner of US throughout};
+\node[card=cGrey, anchor=north] (old) at (10.4,-1.75) {\textbf{The usual way:} look only at whom the US \textcolor{rA}{consulted} before.\\[3pt]
+  \tikz[baseline]{\node[ev=rA] (a) {China}; \node[ev=rA, right=2pt of a] (b) {Japan}; \node[ev=rA, right=2pt of b] (c) {UN};}\\[3pt]
+  \textcolor{cAns}{Russia is not on this list, so it cannot be the answer.}};
 
-% ── the two readings and the prediction ─────────────────────────────────
-\node[box=cGrey, anchor=north west, text width=40mm] (copy) at (13.4,-0.95) {\textbf{triple view}\\past objects of (US, consult): \{CN, UN, JP\}\\[2pt]\textcolor{cAns}{RU $\notin$ history $\Rightarrow$ score $0$}};
-\node[box=cDyad, anchor=north west, text width=40mm] (dyad) at (13.4,-2.5) {\textbf{dyad view} (\model{})\\stream of (US, RU), most recent first:\\\textcolor{rD}{statement$^{-1}$}, \textcolor{rC}{criticize$^{-1}$}, \textcolor{rC}{criticize}, \textcolor{rB}{agreement$^{-1}$}\\[1pt]read out for \textcolor{rA}{consult} by a Transformer};
-\node[box=cStruct, anchor=north west, text width=40mm, minimum height=15mm] (pred) at (13.4,-4.5) {};
-\node[font=\tiny\bfseries, anchor=north west] at (13.5,-4.55) {prediction};
-\begin{scope}[shift={(13.8,-5.95)}]
-  \draw[cGrey] (-0.1,0) -- (3.5,0);
-  \foreach \i/\h/\c/\l in {0/1.0/cAns/RU, 1/0.55/cGrey/CN, 2/0.4/cGrey/JP, 3/0.3/cGrey/UN, 4/0.2/cGrey/DE} {\fill[\c!75] (\i*0.68,0) rectangle ++(0.4,\h); \node[anchor=north, font=\tiny] at (0.2+\i*0.68,-0.02) {\l};}
+\node[card=cDyad, anchor=north] (new) at (10.4,-4.25) {\textbf{\model{}:} look at everything that happened between the US and each country, in order.\\[3pt]
+  \textbf{US \& Russia:}\\[1pt]
+  \tikz[baseline]{\node[ev=rD] (a) {statement\\Mar 13}; \node[ev=rC, right=2pt of a] (b) {criticize\\Mar 1}; \node[ev=rB, right=2pt of b] (c) {agreement\\Jan 15};}\\[3pt]
+  Two countries this busy with each other are likely to talk next, even though they have not ``consulted'' before.};
+
+% ═══════════════ stage 3: the answer ═══════════════
+\draw[big] (13.65,-3.7) -- (14.45,-3.7);
+\node[stage=cStruct, minimum width=44mm, minimum height=74mm, anchor=north west] (S3) at (14.6,0) {};
+\node[stitle=cStruct] at (16.8,-0.15) {3\quad The answer};
+\node[font=\tiny, text=cGrey, anchor=north, text width=40mm, align=center] at (16.8,-0.7) {\model{} ranks every country; the true answer was Russia};
+\begin{scope}[shift={(15.0,-5.6)}]
+  \draw[cGrey] (-0.15,0) -- (3.75,0);
+  \foreach \i/\h/\c/\l in {0/3.4/cAns/Russia, 1/2.0/cGrey/China, 2/1.5/cGrey/Japan, 3/1.05/cGrey/UN, 4/0.65/cGrey/Germany} {
+    \fill[\c!75] (\i*0.75,0) rectangle ++(0.5,\h);
+    \node[anchor=north, font=\tiny, rotate=0] at (0.25+\i*0.75,-0.05) {\l};}
+  \node[font=\scriptsize\bfseries, text=cAns, anchor=south] at (0.25,3.45) {1st};
 \end{scope}
-\draw[arr] (copy.south) -- (dyad.north);
-\draw[arr] (dyad.south) -- (pred.north);
-\draw[arr, cDyad] (P3.east) -- ++(0.25,0) |- (dyad.west);
-\node[font=\tiny, text=cGrey, anchor=north west, text width=40mm] at (13.4,-6.45) {on ICEWS18, 23.4\% of test answers are visible only in the dyad view};
+\node[font=\tiny, text=cGrey, anchor=north, text width=40mm, align=center] at (16.8,-6.1) {the usual way would have put China first and Russia last};
 \end{tikzpicture}

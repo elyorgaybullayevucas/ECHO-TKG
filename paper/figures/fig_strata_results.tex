@@ -1,0 +1,25 @@
+% MRR of the final model by stratum on the three event datasets
+% (three seeds, model without competition; from collect.py).
+\begin{tikzpicture}
+  \begin{axis}[
+    ybar, width=\linewidth, height=5.2cm,
+    bar width=5.5pt, ymin=0, ymax=100,
+    ylabel={MRR ($\times 100$)}, ylabel style={font=\scriptsize},
+    symbolic x coords={cold-far,cold-2hop,dyad-only,blocked,clean},
+    xtick=data, tick label style={font=\scriptsize},
+    enlarge x limits=0.14,
+    legend style={at={(0.03,0.97)}, anchor=north west, legend columns=1,
+                  font=\scriptsize, draw=none, fill=none},
+    axis line style={cGrey}, tick style={cGrey},
+    ymajorgrids, grid style={cGrey!25},
+    nodes near coords, nodes near coords style={font=\tiny, /pgf/number format/fixed, /pgf/number format/precision=1, rotate=90, anchor=west},
+  ]
+    \addplot[fill=cDyad, draw=none] coordinates {
+      (cold-far,1.84) (cold-2hop,8.93) (dyad-only,29.71) (blocked,34.99) (clean,85.64)};
+    \addplot[fill=cDyad!55, draw=none] coordinates {
+      (cold-far,2.01) (cold-2hop,11.57) (dyad-only,37.26) (blocked,38.43) (clean,89.93)};
+    \addplot[fill=cGrey!60, draw=none] coordinates {
+      (cold-far,0.65) (cold-2hop,2.05) (dyad-only,15.20) (blocked,21.03) (clean,80.64)};
+    \legend{ICEWS18, ICEWS14s, GDELT}
+  \end{axis}
+\end{tikzpicture}

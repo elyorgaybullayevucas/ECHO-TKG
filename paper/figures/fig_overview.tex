@@ -1,72 +1,81 @@
-% Architecture overview. Four coloured lanes (structural, popularity,
-% dyadic, path) feeding one logaddexp. Pure TikZ, no external images.
+% Architecture overview: four lanes, explicit coordinates, scaled to the
+% text width by the caller. Pure TikZ.
+\resizebox{\textwidth}{!}{%
 \begin{tikzpicture}[
-  font=\footnotesize,
-  box/.style={draw, rounded corners=3pt, minimum height=7mm, inner xsep=5pt, inner ysep=3pt, align=center, line width=0.6pt},
-  lane/.style={rounded corners=5pt, fill=#1!6, draw=#1!40, line width=0.5pt},
-  arr/.style={-{Stealth[length=2mm]}, line width=0.7pt, cGrey!80},
-  carr/.style={-{Stealth[length=2mm]}, line width=0.9pt, #1},
-  lab/.style={font=\scriptsize\bfseries, text=#1},
-  node distance=4mm and 6mm,
+  font=\small,
+  box/.style={draw, rounded corners=3pt, minimum height=9mm, minimum width=26mm, inner xsep=5pt, inner ysep=3pt, align=center, line width=0.7pt, fill=white},
+  outbox/.style={box, fill=#1!12, draw=#1, line width=1pt},
+  lane/.style={rounded corners=6pt, fill=#1!5, draw=#1!45, line width=0.6pt, inner sep=6pt},
+  lanelab/.style={font=\small\bfseries, text=#1, anchor=east},
+  arr/.style={-{Stealth[length=2.2mm]}, line width=0.8pt, cGrey!80},
+  carr/.style={-{Stealth[length=2.2mm]}, line width=1pt, #1},
+  x=1cm, y=1cm,
 ]
-% ── query ─────────────────────────────────────────────────────────────────
-\node[box, fill=cLight, draw=cGrey] (q) {query\\$(s, r, ?, t)$};
-\node[box, fill=cLight, draw=cGrey, below=9mm of q] (hist) {facts before $t$\\$\mathcal{G}_{<t}$};
+% column positions
+\def\cA{0}\def\cB{3.6}\def\cC{7.2}\def\cD{10.8}\def\cE{14.4}
+% row positions
+\def\rS{4.8}\def\rP{3.2}\def\rD{1.6}\def\rT{0}
 
-% ── structural lane ───────────────────────────────────────────────────────
-\node[box, draw=cStruct, right=12mm of q, yshift=16mm] (snap) {last $H$ snapshots};
-\node[box, draw=cStruct, right=of snap] (evo) {evolver\\R-GCN $\to$ GRU};
-\node[box, draw=cStruct, right=of evo] (conv) {ConvTransE\\$\mathbf{E}_t[s], \mathbf{R}[r]$ vs.\ $\mathbf{E}_t$};
-\node[box, draw=cStruct, fill=cStruct!12, right=of conv] (ls) {$\log\lambda_{\text{struct}}(o)$\\all $N$};
+% ── inputs ───────────────────────────────────────────────────────────────
+\node[box, fill=cLight, draw=cGrey, minimum width=22mm] (q) at (-5.9, 3.0) {query\\$(s, r, ?, t)$};
+\node[box, fill=cLight, draw=cGrey, minimum width=22mm] (hist) at (-5.9, 1.0) {facts before $t$\\$\mathcal{G}_{<t}$};
 
-% ── popularity lane ───────────────────────────────────────────────────────
-\node[box, draw=cPop, right=12mm of q, yshift=6mm] (cnt) {decayed counts of $(r,o)$, $o$\\$\tau \in \{1,4,16,64\}$ + total};
-\node[box, draw=cPop, right=of cnt] (poph) {16-unit head\\$\times$ relation};
-\node[box, draw=cPop, fill=cPop!12, right=of poph, xshift=37mm] (lp) {$\log\lambda_{\text{pop}}(o)$\\all $N$};
+% ── structural ───────────────────────────────────────────────────────────
+\node[box, draw=cStruct] (snap) at (\cA,\rS) {last $H$\\snapshots};
+\node[box, draw=cStruct] (evo)  at (\cB,\rS) {evolver\\R-GCN $\to$ GRU};
+\node[box, draw=cStruct] (conv) at (\cC,\rS) {ConvTransE\\$\mathbf{E}_t[s], \mathbf{R}[r]$ vs.\ $\mathbf{E}_t$};
+\node[outbox=cStruct] (ls)      at (\cE,\rS) {$\log\lambda_{\text{struct}}(o)$\\all $N$ entities};
 
-% ── dyadic lane ───────────────────────────────────────────────────────────
-\node[box, draw=cDyad, right=12mm of q, yshift=-6mm] (sup) {support $\mathcal{S}(q)$\\$S_2$ objects of $(s,r)$ $\cup$ $S_1$ partners of $s$};
-\node[box, draw=cDyad, right=of sup] (str) {dyad stream $\mathcal{D}_{so}$\\$[(\rho_i,\delta_i)]_{i\le L}$};
-\node[box, draw=cDyad, right=of str] (tr) {Transformer\\read-out $= r$};
-\node[box, draw=cComp, right=of tr] (comp) {attention across\\candidates};
-\node[box, draw=cDyad, fill=cDyad!12, right=of comp] (ld) {$\log\lambda_{\text{dyad}}(o)$\\$o \in \mathcal{S}(q)$};
+% ── popularity ───────────────────────────────────────────────────────────
+\node[box, draw=cPop] (cnt)  at (\cA,\rP) {decayed counts\\of $(r, o)$ and of $o$};
+\node[box, draw=cPop] (poph) at (\cB,\rP) {16-unit head\\$\times$ relation};
+\node[outbox=cPop] (lp)      at (\cE,\rP) {$\log\lambda_{\text{pop}}(o)$\\all $N$ entities};
 
-% ── path lane ─────────────────────────────────────────────────────────────
-\node[box, draw=cPath, below=of str, xshift=14mm] (edge) {candidate's own edges\\$(x,\rho',o',\delta',c')$, $P_2$ most recent};
-\node[box, draw=cPath, right=of edge] (msg) {$\mathbf{W}_u \mathbf{h}'_{sx} \odot \mathbf{e}(\rho',\delta',c')$\\sum at $o'$};
-\node[box, draw=cPath, fill=cPath!12, right=of msg] (lpath) {$\log\lambda_{\text{path}}(o')$\\two hops from $s$};
+% ── dyadic ───────────────────────────────────────────────────────────────
+\node[box, draw=cDyad] (sup)  at (\cA,\rD) {support $\mathcal{S}(q)$\\objects of $(s,r)$ $\cup$ partners of $s$};
+\node[box, draw=cDyad] (str)  at (\cB,\rD) {dyad stream $\mathcal{D}_{so}$\\$(\rho_1,\delta_1),\dots,(\rho_L,\delta_L)$};
+\node[box, draw=cDyad] (tr)   at (\cC,\rD) {Transformer\\read-out token $= r$};
+\node[box, draw=cComp] (comp) at (\cD,\rD) {attention across\\the candidates};
+\node[outbox=cDyad] (ld)      at (\cE,\rD) {$\log\lambda_{\text{dyad}}(o)$\\$o \in \mathcal{S}(q)$};
 
-% ── combination ───────────────────────────────────────────────────────────
-\node[box, draw=black, fill=cLight, right=10mm of ld, yshift=6mm, minimum width=20mm] (lae) {$\operatorname{logaddexp}$};
-\node[box, draw=black, right=of lae] (out) {rank all $N$\\cross-entropy};
+% ── path ─────────────────────────────────────────────────────────────────
+\node[box, draw=cPath] (edge) at (\cB,\rT) {each candidate's own\\$P_2$ most recent typed edges};
+\node[box, draw=cPath] (msg)  at (\cC,\rT) {$\mathbf{W}_u\mathbf{h}'_{sx} \odot \mathbf{e}(\rho',\delta',c')$\\summed at $o'$};
+\node[box, draw=cPath] (ph)   at (\cD,\rT) {path head};
+\node[outbox=cPath] (lpath)   at (\cE,\rT) {$\log\lambda_{\text{path}}(o')$\\two hops from $s$};
 
-% ── lanes background ──────────────────────────────────────────────────────
+% ── combination ──────────────────────────────────────────────────────────
+\node[box, draw=black, fill=cLight, minimum width=22mm] (lae) at (18.0, 2.4) {logaddexp\\\scriptsize sum of intensities};
+\node[box, draw=black, fill=cLight, minimum width=22mm] (out) at (18.0, 0.0) {softmax over $N$\\cross-entropy};
+
+% ── lane backgrounds ─────────────────────────────────────────────────────
 \begin{scope}[on background layer]
   \node[lane=cStruct, fit=(snap)(ls)] (L1) {};
   \node[lane=cPop,    fit=(cnt)(lp)]  (L2) {};
   \node[lane=cDyad,   fit=(sup)(ld)]  (L3) {};
   \node[lane=cPath,   fit=(edge)(lpath)] (L4) {};
 \end{scope}
-\node[lab=cStruct, anchor=south west] at (L1.north west) {structural (prior work)};
-\node[lab=cPop, anchor=south west] at (L2.north west) {popularity};
-\node[lab=cDyad, anchor=south west] at (L3.north west) {dyadic};
-\node[lab=cPath, anchor=south west] at (L4.north west) {path};
+\node[lanelab=cStruct] at ($(L1.west)+(-0.15,0)$) {structural};
+\node[lanelab=cPop]    at ($(L2.west)+(-0.1,0)$) {popularity};
+\node[lanelab=cDyad]   at ($(L3.west)+(-0.1,0)$) {dyadic};
+\node[lanelab=cPath]   at ($(L4.west)+(-0.1,0)$) {path};
 
-% ── arrows ────────────────────────────────────────────────────────────────
-\draw[arr] (hist) -- (snap.west);
-\draw[arr] (hist) -- (cnt.west);
-\draw[arr] (hist) -- (sup.west);
-\draw[arr] (q) -- (sup.west);
-\draw[arr] (q) -- (conv.west);
+% ── arrows ───────────────────────────────────────────────────────────────
+\draw[arr] (hist.east) -- ++(0.9,0) |- (L1.west);
+\draw[arr] (hist.east) -- ++(0.9,0) |- (L2.west);
+\draw[arr] (hist.east) -- ++(0.9,0) |- (L3.west);
+\draw[arr] (q.east) -- ++(0.9,0) |- (L3.west);
 \draw[carr=cStruct] (snap) -- (evo); \draw[carr=cStruct] (evo) -- (conv); \draw[carr=cStruct] (conv) -- (ls);
 \draw[carr=cPop] (cnt) -- (poph); \draw[carr=cPop] (poph) -- (lp);
 \draw[carr=cDyad] (sup) -- (str); \draw[carr=cDyad] (str) -- (tr); \draw[carr=cDyad] (tr) -- (comp); \draw[carr=cComp] (comp) -- (ld);
-\draw[carr=cPath] (comp.south) |- (edge.east) ;
-\draw[carr=cPath] (edge) -- (msg); \draw[carr=cPath] (msg) -- (lpath);
-\draw[arr] (ls.east) -| (lae.north);
-\draw[arr] (lp.east) -- (lae.west);
-\draw[arr] (ld.east) -- (lae.west);
-\draw[arr] (lpath.east) -| (lae.south);
+\draw[carr=cPath] (comp.south) -- ++(0,-0.35) -| ($(edge.north)+(0.9,0)$);
+\draw[carr=cPath] (edge) -- (msg); \draw[carr=cPath] (msg) -- (ph); \draw[carr=cPath] (ph) -- (lpath);
+\draw[arr] (ls.east)    -- ++(0.6,0) |- (lae.west);
+\draw[arr] (lp.east)    -- ++(0.6,0) |- (lae.west);
+\draw[arr] (ld.east)    -- ++(0.6,0) |- (lae.west);
+\draw[arr] (lpath.east) -- ++(0.6,0) |- (lae.west);
 \draw[arr] (lae) -- (out);
-\draw[arr, dashed] (evo.south) -- ++(0,-5mm) node[right, font=\tiny, text=cGrey] {$\mathbf{E}_t[s], \mathbf{E}_t[o]$ into the dyadic state};
-\end{tikzpicture}
+% evolved states feed the dyadic state
+\draw[arr, dashed, cStruct!70] (evo.south) -- ++(0,-0.35) -| ($(str.north)+(-1.1,0)$);
+\node[font=\scriptsize, text=cStruct!80] at (1.4, 4.05) {$\mathbf{E}_t[s],\ \mathbf{E}_t[o]$};
+\end{tikzpicture}}

@@ -9,7 +9,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
   \centering\small
   \caption{\textbf{Performance by stratum} on ICEWS18 and ICEWS14s (three seeds, model without competition so that the rows match the ablation base; the competition setting moves the aggregates by 0.25). Strata partition the test set.}
   \label{tab:strata}
-  \setlength{\tabcolsep}{4pt}
+  \setlength{\tabcolsep}{2.8pt}\footnotesize
   \begin{tabular}{l rrrr rrrr}
     \toprule
     & \multicolumn{4}{c}{ICEWS18} & \multicolumn{4}{c}{ICEWS14s} \\
@@ -31,25 +31,25 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \begin{table}[t]
   \centering\small
-  \caption{\textbf{Ablations} on an event dataset and a yearly dataset, MRR / \hone{}, relative to the model without competition. Rows marked with $\pm$ are three-seed means; the others are seed 1. The seed spread of the base is 0.04 on ICEWS18 and 0.20 on YAGO.}
+  \caption{\textbf{Ablations} on an event dataset and a yearly dataset: MRR and its change relative to the model without competition. Rows marked $^{3}$ are three-seed means (spread at most 0.19); the others are seed 1. The seed spread of the base is 0.04 on ICEWS18 and 0.20 on YAGO. \hone{} moves with MRR in every row (ICEWS18 base 26.10, without the dyadic branch 20.51; YAGO base 90.57, without it 61.37).}
   \label{tab:ablation}
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{l rr r rr r}
+  \setlength{\tabcolsep}{4pt}\footnotesize
+  \begin{tabular}{l rr rr}
     \toprule
-    & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{YAGO} \\
-    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
-    removed & MRR & \hone{} & $\Delta$ & MRR & \hone{} & $\Delta$ \\
+    & \multicolumn{2}{c}{ICEWS18} & \multicolumn{2}{c}{YAGO} \\
+    \cmidrule(lr){2-3}\cmidrule(lr){4-5}
+    removed & MRR & $\Delta$ & MRR & $\Delta$ \\
     \midrule
-    nothing (base, 3 seeds)        & 36.29 & 26.10 &        & 91.82 & 90.57 & \\
-    popularity field               & 36.37 & 26.15 & $+0.08$ & 91.81 & 90.66 & $-0.01$ \\
-    candidate context              & 36.27 & 26.05 & $-0.02$ & 91.75\pm0.16 & 90.53 & $-0.07$ \\
-    path intensity                 & 35.92 & 25.85 & $-0.37$ & 91.70\pm0.12 & 90.51 & $-0.12$ \\
-    relation types in the stream   & 35.86 & 25.68 & $-0.43$ & 91.79 & 90.58 & $-0.03$ \\
-    the stream (statistics only)   & 35.71 & 25.57 & $-0.58$ & 91.83 & 90.77 & $+0.01$ \\
-    structural branch              & 35.59 & 25.53 & $-0.70$ & 90.97 & 89.14 & $-0.85$ \\
-    dyadic branch                  & 30.30 & 20.51 & $-5.99$ & 67.18 & 61.37 & $-24.64$ \\
+    nothing (base)$^{3}$           & 36.29 &         & 91.82 & \\
+    popularity field               & 36.37 & $+0.08$ & 91.81 & $-0.01$ \\
+    candidate context              & 36.27 & $-0.02$ & 91.75$^{3}$ & $-0.07$ \\
+    path intensity                 & 35.92 & $-0.37$ & 91.70$^{3}$ & $-0.12$ \\
+    relation types in the stream   & 35.86 & $-0.43$ & 91.79 & $-0.03$ \\
+    the stream (statistics only)   & 35.71 & $-0.58$ & 91.83 & $+0.01$ \\
+    structural branch              & 35.59 & $-0.70$ & 90.97 & $-0.85$ \\
+    dyadic branch                  & 30.30 & $-5.99$ & 67.18 & $-24.64$ \\
     \midrule
-    \emph{added} competition (3 seeds) & 36.54 & 26.36 & $+0.25$ & 91.62 & 90.33 & $-0.20$ \\
+    \emph{added} competition$^{3}$ & 36.54 & $+0.25$ & 91.62 & $-0.20$ \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -62,13 +62,13 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \textbf{Two parts are null and are reported as such.} The popularity field and the candidate-context input move neither dataset outside the seed spread; a prototype intensity that scores every entity by similarity to the query's past answers, tried for the cold-far stratum, is likewise null ($+0.05$ on ICEWS18, $-0.16 \pm 0.19$ on YAGO) and is kept only as an ablation switch. We leave them in the released code with their switches rather than silently removing them, so that the ablation table is reproducible as printed.
 
-\subsection{What a dyad stream looks like}
+\subsection{The same strata on every event dataset}
 
 \begin{figure}[t]
   \centering
-  \input{figures/fig_kernel}
-  \caption{\textbf{What the branches add, by stratum} (ICEWS18, \hten{}, seed 1). Removing the path intensity costs the cold-2hop stratum a third of its \hten{}; removing the stream or its relation types costs the dyad-only and blocked strata; the clean stratum is unaffected by anything. Each bar is the change relative to the base model.}
-  \label{fig:kernel}
+  \input{figures/fig_strata_results}
+  \caption{\textbf{MRR by stratum on the three event datasets} (three seeds). The profile is the same on all three: the clean stratum is solved, the blocked and dyad-only strata are where a copy mechanism fails and where \model{} earns its margin, and the two cold strata are where the remaining headroom lies. GDELT, whose fifteen-minute snapshots make every stratum sparser, is lower everywhere but keeps the ordering.}
+  \label{fig:strata-results}
 \end{figure}
 
-\Cref{fig:kernel} shows the same ablations per stratum. Each component's cost concentrates on the stratum it was built for, and no component costs the clean stratum anything: the parts of the model are additive in the strata they touch, which is what a superposition of intensities should look like and what a gated mixture typically does not.
+\Cref{fig:strata-results} repeats the stratified view on ICEWS14s and GDELT. The profile is identical across the three event datasets, which is what one expects of strata defined from the data rather than from the model: the clean stratum sits above 80 MRR everywhere, the blocked and dyad-only strata in the 15 to 40 range, and the cold strata near zero. The same figure says why GDELT is the hardest benchmark in the suite despite its small vocabulary: at fifteen-minute resolution its dyad streams are sparse, and every stratum except the clean one is a third to a half lower than on ICEWS.

@@ -1,0 +1,9 @@
+_fig.*
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+pages/
+build.log

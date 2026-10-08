@@ -4,41 +4,7 @@
 % was verified against the paper's own page (see related_work.md).
 \documentclass[10pt,twocolumn]{article}
 \usepackage[margin=0.75in]{geometry}
-\usepackage[T1]{fontenc}
-\usepackage[utf8]{inputenc}
-\usepackage{lmodern}
-\usepackage{amsmath,amssymb,amsthm}
-\usepackage{booktabs,multirow,array}
-\usepackage{graphicx}
-\usepackage{xcolor}
-\usepackage{tikz}
-\usetikzlibrary{arrows.meta,positioning,calc,shapes.misc,backgrounds,fit}
-\usepackage{pgfplots}
-\pgfplotsset{compat=1.17}
-\usepackage[hidelinks]{hyperref}
-\usepackage[nameinlink,capitalize]{cleveref}
-\usepackage{microtype}
-\usepackage{caption}
-\captionsetup{font=small,labelfont=bf}
-
-\newtheorem{proposition}{Proposition}
-\newtheorem{definition}{Definition}
-
-% colours shared by every figure
-\definecolor{cDyad}{HTML}{2A6F97}
-\definecolor{cPath}{HTML}{E07A1F}
-\definecolor{cStruct}{HTML}{4C9A2A}
-\definecolor{cPop}{HTML}{8E6BBF}
-\definecolor{cComp}{HTML}{C0392B}
-\definecolor{cGrey}{HTML}{6B6B6B}
-\definecolor{cLight}{HTML}{F2F4F7}
-
-\newcommand{\model}{ECHO}
-\newcommand{\hone}{H@1}
-\newcommand{\hten}{H@10}
-\newcommand{\dyad}[2]{(#1,#2)}
-\newcommand{\lam}{\lambda}
-\newcommand{\pm}{\ensuremath{\scriptstyle\pm}}
+\input{_preamble}
 
 \title{\model{}: Dyadic Event-Stream Intensities for\\Temporal Knowledge Graph Forecasting}
 

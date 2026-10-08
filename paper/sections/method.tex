@@ -12,7 +12,10 @@
 
 We model the object of a query $q = (s, r, ?, t)$ as the mark of the first event of a superposition of marked point processes. Superposition adds intensities, so if $\lam_k(o \mid q)$ is the intensity under which $o$ would be emitted by process $k$, the probability that the answer is $o$ is proportional to $\sum_k \lam_k(o \mid q)$, and in log space the branches combine through
 \begin{equation}
-  \log \lam(o \mid q) = \operatorname{logaddexp}\big(\log\lam_{\text{struct}},\ \log\lam_{\text{pop}},\ \log\lam_{\text{dyad}},\ \log\lam_{\text{path}}\big)(o \mid q).
+  \begin{aligned}
+  \log \lam(o \mid q) = \operatorname{logaddexp}\big(&\log\lam_{\text{struct}}(o \mid q),\ \log\lam_{\text{pop}}(o \mid q),\\
+                                                      &\log\lam_{\text{dyad}}(o \mid q),\ \log\lam_{\text{path}}(o \mid q)\big).
+  \end{aligned}
   \label{eq:super}
 \end{equation}
 There is no mixing weight and no gate. A learned gate between a copy branch and a neural branch is the usual design in this literature, and in our own earlier attempts it either collapsed onto one branch or oscillated between epochs; a sum of intensities has neither failure mode, and a branch that is uninformative for a query simply contributes a small intensity. Each branch has its own learned bias, initialised at $-2$, so that all four start at comparable scale. The model is trained with cross-entropy over all $N$ entities on $\operatorname{softmax}_o \log\lam(o \mid q)$, with label smoothing, plus a small auxiliary cross-entropy on the structural branch alone that keeps it from being starved by the easier branches during the first epochs.
@@ -29,15 +32,19 @@ For each candidate $o \in \mathcal{S}(q)$ the last $L$ events of the dyad stream
 \end{equation}
 where $\rho_i \in \{1, \dots, 2|\mathcal{R}|\}$ is the typed, directed relation of the $i$-th event and $\delta_i = t - \tau_i \ge 1$ its elapsed time in snapshots. The time encoding is
 \begin{equation}
-  \phi(\delta) = \mathbf{W}_\phi \big[\tfrac{1}{4}\ell,\ \sin(\omega_1 \ell), \cos(\omega_1 \ell), \dots, \sin(\omega_8 \ell), \cos(\omega_8 \ell)\big], \quad \ell = \log(1 + \delta),
+  \begin{aligned}
+  \phi(\delta) &= \mathbf{W}_\phi \big[\tfrac{1}{4}\ell,\ \sin(\omega_1 \ell), \cos(\omega_1 \ell),\\
+               &\qquad\quad \dots,\ \sin(\omega_8 \ell), \cos(\omega_8 \ell)\big], \qquad \ell = \log(1 + \delta),
+  \end{aligned}
   \label{eq:time}
 \end{equation}
 with $\omega_k$ geometrically spaced in $[1, 24]$. Nothing in \cref{eq:time} is monotone in $\delta$, so the intensity built on it can peak at any elapsed time the data asks for, which a decay kernel cannot. A read-out token $\mathbf{q} = \mathbf{E}_q[r] + \mathbf{W}_s \mathbf{E}_t[s]$ carries the query relation and the evolved subject state; the sequence $[\mathbf{q}; \mathbf{x}_1; \dots; \mathbf{x}_L]$ passes through two pre-norm Transformer blocks with four heads and dimension 64, and the output at the read-out position is the stream state $\mathbf{z}_{so}$. One mechanism therefore covers self-excitation (past $r$ events on the dyad, which is recurrence), cross-excitation (past $\rho \ne r$ events raising $r$), reciprocity (events in the other direction, which carry the inverse type) and order (the sequence $\rho_1 \rho_2$ differs from $\rho_2 \rho_1$).
 
-Truncating the stream to $L$ events must not lose counts, so the state is concatenated with eight summary statistics of the full history, $\mathbf{a}_{so} = [\log(1+n_{sro}), \log(1+\delta_{sro}), \log(1+\bar{g}_{sro}), \mathbb{1}[n_{sro} > 0], \log(1+n_{so}), \log(1+\delta_{so}), \log(1+\bar{g}_{so}), n_{sro}/n_{so}]$, where $n$, $\delta$ and $\bar{g}$ are the count, the recency and the mean inter-arrival gap of the triple $(s, r, o)$ and of the dyad $(s, o)$. The candidate is also described by what \emph{it} has been doing with anyone: its $P_2$ most recent distinct typed edges $(\rho', o', \delta', c')$, each embedded as $\mathbf{E}_{\rho'} + \phi(\delta') + \mathbf{W}_c \log(1 + c')$, are mean-pooled into a context vector $\mathbf{c}_o$. The per-candidate state is then
+Truncating the stream to $L$ events must not lose counts, so the state is concatenated with eight summary statistics of the full history, $\mathbf{a}_{so} = [\log(1+n_{sro}), \log(1+\delta_{sro}), \log(1+\bar{g}_{sro}), \mathbf{1}[n_{sro} > 0], \log(1+n_{so}), \log(1+\delta_{so}), \log(1+\bar{g}_{so}), n_{sro}/n_{so}]$, where $n$, $\delta$ and $\bar{g}$ are the count, the recency and the mean inter-arrival gap of the triple $(s, r, o)$ and of the dyad $(s, o)$. The candidate is also described by what \emph{it} has been doing with anyone: its $P_2$ most recent distinct typed edges $(\rho', o', \delta', c')$, each embedded as $\mathbf{E}_{\rho'} + \phi(\delta') + \mathbf{W}_c \log(1 + c')$, are mean-pooled into a context vector $\mathbf{c}_o$. The per-candidate state is then
 \begin{equation}
-  \mathbf{h}_{so} = \mathrm{MLP}\big([\mathbf{z}_{so};\ \mathrm{LN}(\mathbf{a}_{so});\ \mathbf{W}_e \mathbf{E}_t[o];\ \mathbf{c}_o;\ \mathbf{W}_s' \mathbf{E}_t[s];\ \mathbf{W}_r \mathbf{R}[r]]\big).
+  \mathbf{h}_{so} = \mathrm{MLP}\big([\mathbf{z}_{so};\ \mathrm{LN}(\mathbf{a}_{so});\ \mathbf{W}_e \mathbf{E}_t[o];\ \mathbf{c}_o;\ \mathbf{q}_s;\ \mathbf{q}_r]\big),
 \end{equation}
+with $\mathbf{q}_s = \mathbf{W}_s' \mathbf{E}_t[s]$ and $\mathbf{q}_r = \mathbf{W}_r \mathbf{R}[r]$.
 
 \paragraph{Competition.}
 A scorer that looks at one candidate at a time cannot express ``the answer rotates among these partners'' or ``the partner that has gone quiet is due''. The states of all candidates of one query therefore pass through one further attention block \emph{across the support}, masked to the valid candidates, so that $\mathbf{h}'_{so}$ depends on the streams of the other candidates. The dyadic log-intensity is a linear read-out, $\log\lam_{\text{dyad}}(o \mid q) = \mathbf{w}^\top \mathbf{h}'_{so} + b_{\text{dyad}}$, and is $-\infty$ outside the support. On the yearly datasets, where a query rarely has more than one candidate with a live triple history, the competition block is switched off; \cref{sec:exp} states how that choice was made.
@@ -46,12 +53,17 @@ A scorer that looks at one candidate at a time cannot express ``the answer rotat
 
 The dyad is silent whenever $s$ and the answer never interacted, which is a quarter of the ICEWS queries. The path intensity extends the reach of the dyad by one hop. Each first-hop candidate $x \in \mathcal{S}(q)$ forwards its query-conditioned state along its own $P_2$ most recent typed edges $(x, \rho', o', \delta', c')$:
 \begin{equation}
-  \mathbf{m}_{x \to o'} = (\mathbf{W}_u \mathbf{h}'_{sx}) \odot \mathbf{e}(\rho', \delta', c'), \qquad
-  \mathbf{e} = \mathrm{MLP}\big(\mathbf{E}'_{\rho'} + \phi(\delta') + \mathbf{W}_c' \log(1+c')\big),
+  \begin{aligned}
+  \mathbf{m}_{x \to o'} &= (\mathbf{W}_u \mathbf{h}'_{sx}) \odot \mathbf{e}(\rho', \delta', c'),\\
+  \mathbf{e}(\rho', \delta', c') &= \mathrm{MLP}\big(\mathbf{E}'_{\rho'} + \phi(\delta') + \mathbf{W}_c' \log(1+c')\big),
+  \end{aligned}
 \end{equation}
 and the messages arriving at each second-hop entity $o'$ are summed, $\bar{\mathbf{m}}_{o'} = n_{o'}^{-1/2} \sum_x \mathbf{m}_{x \to o'}$ over the $n_{o'}$ paths that reach it, excluding paths back to $s$. The path log-intensity is
 \begin{equation}
-  \log\lam_{\text{path}}(o' \mid q) = \mathrm{MLP}\big([\mathrm{LN}(\bar{\mathbf{m}}_{o'});\ \log(1+n_{o'});\ \mathbf{W}_e \mathbf{E}_t[o'];\ \mathbf{W}_s' \mathbf{E}_t[s];\ \mathbf{W}_r \mathbf{R}[r]]\big) + b_{\text{path}},
+  \begin{aligned}
+  \log\lam_{\text{path}}(o' \mid q) = \mathrm{MLP}\big([&\mathrm{LN}(\bar{\mathbf{m}}_{o'});\ \log(1+n_{o'});\\
+                                                        &\mathbf{W}_e \mathbf{E}_t[o'];\ \mathbf{q}_s;\ \mathbf{q}_r]\big) + b_{\text{path}},
+  \end{aligned}
 \end{equation}
 and $-\infty$ for entities no path reaches. A path is thus the composition of a full event stream, read by the Transformer, with a typed, timed edge: a differentiable length-two temporal rule whose body is a sequence rather than a single past fact. Because every first-hop state is already computed, the path costs one sparse gather and one scatter-add per chunk of queries.
 

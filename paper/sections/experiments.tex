@@ -18,7 +18,8 @@ Entity and relation dimension 200, two message-passing layers, history $H = 10$ 
   \centering\small
   \caption{\textbf{Main results}, time-aware filtered, $\times 100$. Each baseline number is quoted from the paper named in the source column; \model{} is the mean of three seeds (standard deviations in \cref{tab:compete}). $\dagger$: no released code. Best in \textbf{bold}, second \underline{underlined}. ICEWS14s rows other than DiMNet, LogCL, NADEx and \model{} are from the CID-TKG table.}
   \label{tab:main}
-  \setlength{\tabcolsep}{3.5pt}
+  \setlength{\tabcolsep}{3pt}
+  \resizebox{\textwidth}{!}{%
   \begin{tabular}{l l rrr rrr rrr rrr rrr}
     \toprule
     & & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{ICEWS14s} & \multicolumn{3}{c}{GDELT} & \multicolumn{3}{c}{YAGO} & \multicolumn{3}{c}{WIKI} \\
@@ -47,7 +48,7 @@ Entity and relation dimension 200, two message-passing layers, history $H = 10$ 
     \midrule
     \model{} (ours) & & 36.54 & 26.36 & 56.21 & 47.43 & 37.49 & 66.16 & 27.10 & \textbf{18.16} & 44.62 & \textbf{91.82} & \textbf{90.57} & \underline{93.23} & \textbf{83.41} & \textbf{80.44} & \underline{87.39} \\
     \bottomrule
-  \end{tabular}
+  \end{tabular}}
 \end{table*}
 
 \Cref{tab:main} reports the comparison. We read it in three parts and state each exactly.
@@ -66,11 +67,11 @@ Entity and relation dimension 200, two message-passing layers, history $H = 10$ 
     \toprule
     dataset & without competition & with competition \\
     \midrule
-    ICEWS18  & 36.29 \pm0.04 / 26.10 & \textbf{36.54 \pm0.10 / 26.36} \\
-    ICEWS14s & 47.18 \pm0.04 / 37.19 & \textbf{47.43 \pm0.14 / 37.49} \\
-    GDELT    & 27.01 \pm0.01 / 18.05 & \textbf{27.10 \pm0.02 / 18.16} \\
-    WIKI     & \textbf{83.41 \pm0.12 / 80.44} & 83.28 \pm0.17 / 80.22 \\
-    YAGO     & \textbf{91.82 \pm0.20 / 90.57} & 91.62 \pm0.12 / 90.33 \\
+    ICEWS18  & 36.29 \spm0.04 / 26.10 & \textbf{36.54 \spm0.10 / 26.36} \\
+    ICEWS14s & 47.18 \spm0.04 / 37.19 & \textbf{47.43 \spm0.14 / 37.49} \\
+    GDELT    & 27.01 \spm0.01 / 18.05 & \textbf{27.10 \spm0.02 / 18.16} \\
+    WIKI     & \textbf{83.41 \spm0.12 / 80.44} & 83.28 \spm0.17 / 80.22 \\
+    YAGO     & \textbf{91.82 \spm0.20 / 90.57} & 91.62 \spm0.12 / 90.33 \\
     \bottomrule
   \end{tabular}
 \end{table}

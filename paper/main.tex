@@ -19,8 +19,9 @@
 \begin{document}
 \maketitle
 
-% the introduction figure is issued here so that it lands at the top of the first column of page 1
-\begin{figure}[!t]
+% the introduction figure is issued here; \suppressfloats[t] keeps it out of the first column so it lands at the top of the second column of page 1
+\suppressfloats[t]
+\begin{figure}[t]
   \centering
   \figfile{fig_intro}{\linewidth}
   \caption{\textbf{What \model{} reads.} Countries linked by dated, typed events, and the question: whom will the United States consult on March 14? A copy mechanism reads only the thin \emph{consult} arrows, so Russia is not a candidate for it. \model{} reads every event between the United States and each country as one ordered stream; for Russia that stream, an agreement, a criticism and a statement within weeks, says the two are in close contact, and \model{} ranks Russia first. On ICEWS18 the answer is visible only in this reading for 23.4\% of test queries (\cref{sec:diag}). Names and dates are illustrative.}

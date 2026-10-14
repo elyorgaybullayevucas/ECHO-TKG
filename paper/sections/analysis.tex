@@ -1,13 +1,13 @@
 \section{Analysis}
 \label{sec:analysis}
 
-The aggregate numbers of \cref{tab:main} say how much; this section says where and why. Every stratum is defined from the data alone (\cref{def:strata}) and partitions the test set, so the rows of each table weight to the aggregate.
+The aggregate numbers of \cref{tab:main} say how much; this section says where and why. The strata of \cref{def:strata} are computed here relative to the support $\mathcal{S}(q)$ of the final model ($S_1 = 96$, $S_2 = 64$): an answer that interacted with $s$ but is older than the 96 most recent partners of $s$ lies outside the support and is counted as cold, and the cold stratum is split by whether the answer is a partner of some candidate (cold-2hop) or not (cold-far). This moves 4.2\% of ICEWS18 queries and 0.8\% of ICEWS14s queries from the data-defined dyad-only stratum of \cref{fig:strata} into the cold strata; the shares below are those of the evaluation. The strata partition the test set, so the rows of each table weight to the aggregate.
 
 \subsection{Where the queries are, and where the errors are}
 
 \begin{table}[t]
   \centering\small
-  \caption{\textbf{Performance by stratum} on ICEWS18 and ICEWS14s, final model, three seeds. Strata partition the test set, so the rows weight to the aggregates of \cref{tab:main}.}
+  \caption{\textbf{Performance by stratum} on ICEWS18 and ICEWS14s, final model, three seeds. Strata are computed relative to the support (see text) and partition the test set, so the rows weight to the aggregates of \cref{tab:main}.}
   \label{tab:strata}
   \setlength{\tabcolsep}{2.8pt}\footnotesize
   \begin{tabular}{l rrrr rrrr}
@@ -58,7 +58,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
 
 \textbf{The dyadic branch is the model.} Without it \model{} is a snapshot encoder with a popularity prior and scores 30.30 on ICEWS18, which is RE-GCN's published 30.58, and 67.18 on YAGO. The branch is worth 6.0 MRR on the event dataset and 24.6 on the yearly one.
 
-\textbf{The stream acts where the diagnostic said it would.} On ICEWS18 the Transformer over the event stream is worth 0.58 MRR over the eight summary statistics alone, and the relation types inside it are worth 0.43: a stream with types replaced by a single placeholder loses most of what the stream adds. The path intensity adds 0.37, and \cref{tab:strata} locates it: on cold-2hop queries it lifts MRR from 6.21 to 8.52 and \hten{} from 13.4 to 19.0 on seed 1. The seed spread on ICEWS18 is 0.04, so each of these effects is an order of magnitude above noise. On YAGO the same three parts are worth $+0.01$, $-0.03$ and $-0.12$, all inside the 0.20 seed spread. The eight statistics carry the dyadic branch on their own there, because on yearly data the question is only whether a fact is still running, and the count and recency of the triple answer it. This is the prediction made in \cref{sec:diag} before any model was trained, and it is the kind of evidence a stratum-level analysis can give and a leaderboard cannot.
+\textbf{The stream acts where the diagnostic said it would.} On ICEWS18 the Transformer over the event stream is worth 0.58 MRR over the eight summary statistics alone, and the relation types inside it are worth 0.43: a stream with types replaced by a single placeholder loses most of what the stream adds. The path intensity adds 0.37, and the strata locate it: on cold-2hop queries removing it drops MRR from 8.93 to 7.51 and \hten{} from 19.5 to 16.4 (seed 1 against the three-seed base). The seed spread on ICEWS18 is 0.04, so each of these effects is an order of magnitude above noise. On YAGO the same three parts are worth $+0.01$, $-0.03$ and $-0.12$, all inside the 0.20 seed spread. The eight statistics carry the dyadic branch on their own there, because on yearly data the question is only whether a fact is still running, and the count and recency of the triple answer it. This is the prediction made in \cref{sec:diag} before any model was trained, and it is the kind of evidence a stratum-level analysis can give and a leaderboard cannot.
 
 \begin{figure}[t]
   \centering
@@ -67,7 +67,7 @@ The aggregate numbers of \cref{tab:main} say how much; this section says where a
   \label{fig:ablation-strata}
 \end{figure}
 
-\Cref{fig:ablation-strata} resolves the same ablations by stratum, and each part is paid for where it was built: the path intensity on cold-2hop ($-1.42$ MRR when removed), the relation types on the blocked stratum ($-1.02$), the stream on dyad-only and blocked ($-1.85$ and $-1.35$), and the structural branch on the two cold strata ($-0.72$ and $-1.67$), which the dyad cannot see at all. No part except the dyadic branch itself costs the clean stratum more than 0.3 points. The parts of a superposition are additive in the strata they touch, which is what a sum of intensities should look like and what a gated mixture typically does not.
+\Cref{fig:ablation-strata} resolves the same ablations by stratum, and each part is paid for where it was built: the path intensity on cold-2hop ($-1.42$ MRR when removed), the relation types on the blocked stratum ($-1.02$), the stream on dyad-only and blocked ($-1.85$ and $-1.35$), and the structural branch on the two cold strata ($-0.72$ and $-1.67$), which the dyad cannot see at all. No part except the dyadic branch itself costs the clean stratum more than 0.4 points. The parts of a superposition are additive in the strata they touch, which is what a sum of intensities should look like and what a gated mixture typically does not.
 
 \textbf{Two parts are null and are reported as such.} The popularity field and the candidate-context input move neither dataset outside the seed spread; a prototype intensity that scores every entity by similarity to the query's past answers, tried for the cold-far stratum, is likewise null ($+0.05$ on ICEWS18, $-0.16 \pm 0.19$ on YAGO) and is kept only as an ablation switch. We leave them in the released code with their switches rather than silently removing them, so that the ablation table is reproducible as printed.
 

@@ -1,0 +1,139 @@
+\begin{thebibliography}{10}
+\providecommand{\url}[1]{\texttt{#1}}
+\providecommand{\urlprefix}{URL }
+\providecommand{\doi}[1]{https://doi.org/#1}
+
+\bibitem{cai2024diffutkg}
+Cai, Y., Liu, Q., Gan, Y., Li, C., Liu, X., Lin, R., Luo, D., Yang, J.:
+  Predicting the unpredictable: Uncertainty-aware reasoning over temporal
+  knowledge graphs via diffusion process. In: Findings of the Association for
+  Computational Linguistics: ACL 2024. pp. 5766--5778 (2024)
+
+\bibitem{chen2024logcl}
+Chen, W., Wan, H., Wu, Y., Zhao, S., Cheng, J., Li, Y., Lin, Y.: Local-global
+  history-aware contrastive learning for temporal knowledge graph reasoning.
+  In: IEEE 40th International Conference on Data Engineering (ICDE) (2024),
+  arXiv:2312.01601
+
+\bibitem{chen2025cogntke}
+Chen, W., Wu, Y., Wu, S., Zhang, Z., Liao, M., Lin, Y., Wan, H.: {CognTKE}: A
+  cognitive temporal knowledge extrapolation framework. In: Proceedings of the
+  AAAI Conference on Artificial Intelligence (2025), arXiv:2412.16557
+
+\bibitem{dong2023daemon}
+Dong, H., Ning, Z., Wang, P., Qiao, Z., Wang, P., Zhou, Y., Fu, Y.: Adaptive
+  path-memory network for temporal knowledge graph reasoning. In: Proceedings
+  of the Thirty-Second International Joint Conference on Artificial
+  Intelligence (IJCAI) (2023), arXiv:2304.12604
+
+\bibitem{dong2025dimnet}
+Dong, H., Qiao, Z., Ning, Z., Hao, Q., Du, Y., Wang, P., Zhou, Y.: Disentangled
+  multi-span evolutionary network against temporal knowledge graph reasoning.
+  In: Findings of the Association for Computational Linguistics: ACL 2025
+  (2025), arXiv:2505.14020
+
+\bibitem{dong2024tipnn}
+Dong, H., Wang, P., Xiao, M., Ning, Z., Wang, P., Zhou, Y.: Temporal inductive
+  path neural network for temporal knowledge graph reasoning. Artificial
+  Intelligence  (2024), arXiv:2309.03251
+
+\bibitem{nadex2026}
+Gan, Y., He, P., Cai, Y., Lin, R., Zhou, G., Liu, Q.: Negative-aware diffusion
+  process for temporal knowledge graph extrapolation. In: Findings of the
+  Association for Computational Linguistics: EACL 2026 (2026), arXiv:2602.08815
+
+\bibitem{gastinger2024history}
+Gastinger, J., Meilicke, C., Errica, F., Sztyler, T., Schuelke, A.,
+  Stuckenschmidt, H.: History repeats itself: A baseline for temporal knowledge
+  graph forecasting. In: Proceedings of the Thirty-Third International Joint
+  Conference on Artificial Intelligence (IJCAI) (2024), arXiv:2404.16726
+
+\bibitem{gastinger2026counttrucola}
+Gastinger, J., Meilicke, C., Stuckenschmidt, H.: {CountTRuCoLa}: Rule learning
+  for interpretable temporal knowledge graph forecasting. In: The 25th
+  International Semantic Web Conference (ISWC) (2026), arXiv:2509.09474
+
+\bibitem{gastinger2023apples}
+Gastinger, J., Sztyler, T., Sharma, L., Schuelke, A., Stuckenschmidt, H.:
+  Comparing apples and oranges? on the evaluation of methods for temporal
+  knowledge graph forecasting. In: Machine Learning and Knowledge Discovery in
+  Databases: Research Track (ECML PKDD) (2023)
+
+\bibitem{han2021xerte}
+Han, Z., Chen, P., Ma, Y., Tresp, V.: {xERTE}: Explainable reasoning on
+  temporal knowledge graphs for forecasting future links. In: International
+  Conference on Learning Representations (ICLR) (2021), arXiv:2012.15537
+
+\bibitem{han2020ghnn}
+Han, Z., Ma, Y., Wang, Y., G{\"u}nnemann, S., Tresp, V.: Graph hawkes neural
+  network for forecasting on temporal knowledge graphs. In: Automated Knowledge
+  Base Construction (AKBC) (2020), arXiv:2003.13432
+
+\bibitem{strikingness2026}
+Huang, R., Zhang, S., Wei, W.: Strikingness-aware evaluation for temporal
+  knowledge graph reasoning. arXiv preprint arXiv:2605.13153  (2026)
+
+\bibitem{jin2020renet}
+Jin, W., Qu, M., Jin, X., Ren, X.: Recurrent event network: Autoregressive
+  structure inference over temporal knowledge graphs. In: Proceedings of the
+  2020 Conference on Empirical Methods in Natural Language Processing (EMNLP)
+  (2020), arXiv:1904.05530
+
+\bibitem{li2022tirgn}
+Li, Y., Sun, S., Zhao, J.: {TiRGN}: Time-guided recurrent graph network with
+  local-global historical patterns for temporal knowledge graph reasoning. In:
+  Proceedings of the Thirty-First International Joint Conference on Artificial
+  Intelligence (IJCAI) (2022)
+
+\bibitem{li2022cen}
+Li, Z., Guan, S., Jin, X., Peng, W., Lyu, Y., Zhu, Y., Bai, L., Li, W., Guo,
+  J., Cheng, X.: Complex evolutional pattern learning for temporal knowledge
+  graph reasoning. In: Proceedings of the 60th Annual Meeting of the
+  Association for Computational Linguistics (Volume 2: Short Papers) (2022)
+
+\bibitem{li2022hismatch}
+Li, Z., Hou, Z., Guan, S., Jin, X., Peng, W., Bai, L., Lyu, Y., Li, W., Guo,
+  J., Cheng, X.: {HiSMatch}: Historical structure matching based temporal
+  knowledge graph reasoning. In: Findings of the Association for Computational
+  Linguistics: EMNLP 2022 (2022), arXiv:2210.09708
+
+\bibitem{li2021regcn}
+Li, Z., Jin, X., Li, W., Guan, S., Guo, J., Shen, H., Wang, Y., Cheng, X.:
+  Temporal knowledge graph reasoning based on evolutional representation
+  learning. In: Proceedings of the 44th International ACM SIGIR Conference on
+  Research and Development in Information Retrieval (2021), arXiv:2104.10353
+
+\bibitem{liu2022tlogic}
+Liu, Y., Ma, Y., Hildebrandt, M., Joblin, M., Tresp, V.: {TLogic}: Temporal
+  logical rules for explainable link forecasting on temporal knowledge graphs.
+  In: Proceedings of the AAAI Conference on Artificial Intelligence (2022),
+  arXiv:2112.08025
+
+\bibitem{sun2021titer}
+Sun, H., Zhong, J., Ma, Y., Han, Z., He, K.: {TimeTraveler}: Reinforcement
+  learning for temporal knowledge graph forecasting. In: Proceedings of the
+  2021 Conference on Empirical Methods in Natural Language Processing (EMNLP)
+  (2021), arXiv:2109.04101
+
+\bibitem{trivedi2017knowevolve}
+Trivedi, R., Dai, H., Wang, Y., Song, L.: Know-evolve: Deep temporal reasoning
+  for dynamic knowledge graphs. In: Proceedings of the 34th International
+  Conference on Machine Learning (ICML) (2017), arXiv:1705.05742
+
+\bibitem{xu2023cenet}
+Xu, Y., Ou, J., Xu, H., Fu, L.: Temporal knowledge graph reasoning with
+  historical contrastive learning. In: Proceedings of the AAAI Conference on
+  Artificial Intelligence (2023), arXiv:2211.10904
+
+\bibitem{zhang2026evolution}
+Zhang, J., Li, Z., Wang, M., Shao, J., Cui, J., Li, H.: Towards better
+  evolution modeling for temporal knowledge graphs. arXiv preprint
+  arXiv:2602.08353  (2026)
+
+\bibitem{zhu2021cygnet}
+Zhu, C., Chen, M., Fan, C., Cheng, G., Zhan, Y.: Learning from history:
+  Modeling temporal knowledge graphs with sequential copy-generation networks.
+  In: Proceedings of the AAAI Conference on Artificial Intelligence (2021),
+  arXiv:2012.08492
+
+\end{thebibliography}

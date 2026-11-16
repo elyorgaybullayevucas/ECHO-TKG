@@ -1,0 +1,6 @@
+pages/
+*.aux
+*.log
+*.blg
+*.out
+*.zip

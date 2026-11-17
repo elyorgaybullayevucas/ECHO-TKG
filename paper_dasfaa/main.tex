@@ -6,7 +6,6 @@
 \usepackage{graphicx}
 \usepackage{xcolor}
 \usepackage{wrapfig}
-\usepackage{rotating}
 \usepackage[hidelinks]{hyperref}
 \renewcommand\UrlFont{\color{blue}\rmfamily}
 
@@ -145,12 +144,12 @@ Two limitations of the counters guide the model design. First, on the dyad-only 
 \section{Method}
 \label{sec:method}
 
-\begin{sidewaysfigure}[p]
+\begin{figure}[t]
   \centering
-  \includegraphics[width=\textheight]{figures/fig_framework.pdf}
-  \caption{Overview of \model{}. Left: the dyad stream encoder, which turns the recent events of an entity pair into typed and timed tokens and encodes them with two Transformer blocks. Middle: snapshot evolution of entity states, the dyad streams of the support set, and the candidate states with attention across the candidates of a query. Right: the four intensities, their additive combination and the final ranking.}
+  \includegraphics[width=\textwidth]{figures/fig_framework.pdf}
+  \caption{Overview of \model{}. Entity states are evolved over recent snapshots (top). For each candidate in the support set, the event stream between the subject and the candidate is encoded by a Transformer and combined with summary statistics, the candidate's context and the entity and query vectors; the candidates of a query then attend to each other (middle). The refined candidate states are also propagated along the candidates' recent edges, and a popularity field scores all entities (bottom). The four intensities are added and the entities are ranked (right).}
   \label{fig:overview}
-\end{sidewaysfigure}
+\end{figure}
 
 Fig.~\ref{fig:overview} gives an overview of \model{}. For a query $q = (s, r, ?, t)$, the model computes four log-intensities for the candidate objects and combines them.
 
@@ -161,11 +160,18 @@ We regard the object of a query as the mark of the first event of a superpositio
   \log \lam(o \mid q) = \log\big(\lam_{\mathrm{struct}}(o \mid q) + \lam_{\mathrm{pop}}(o \mid q) + \lam_{\mathrm{dyad}}(o \mid q) + \lam_{\mathrm{path}}(o \mid q)\big),
   \label{eq:super}
 \end{equation}
-which is computed from the four log-intensities with the log-sum-exp operation. No gate or mixing weight is used. A component that has no evidence for a candidate contributes a small intensity and does not suppress the others. Each component has a learnable bias initialized to $-2$. The model is trained with the cross-entropy loss over all entities on $\mathrm{softmax}_o \log\lam(o \mid q)$ with label smoothing, plus an auxiliary cross-entropy loss on the structural component.
+which is computed from the four log-intensities with the log-sum-exp operation. The probability that $o$ is the answer is the normalized intensity,
+\begin{equation}
+  P(o \mid q) = \frac{\lam(o \mid q)}{\sum_{o' \in \mathcal{E}} \lam(o' \mid q)} .
+  \label{eq:prob}
+\end{equation}
+The four components differ in the evidence they read and in the entities they cover. The structural and popularity intensities are defined for all $N$ entities. The dyadic intensity is defined only for entities that have interacted with the subject, and the path intensity only for entities within two hops; outside these sets the corresponding intensity is zero.
+
+We use a sum instead of the gate or mixing weight that is common in copy-generation models~\cite{zhu2021cygnet} for two reasons. First, a component without evidence for a candidate simply adds nothing and cannot suppress the others, so no mechanism is needed to decide which component to trust for a given query. Second, the contribution of each component to a prediction can be read off directly, which we use in the stratified analysis of Sect.~\ref{sec:ablation}. Each component has a learnable bias initialized to $-2$, so that all components start at a similar scale.
 
 \subsection{Support Set}
 
-The dyadic and path intensities are computed on a support set $\mathcal{S}(q) \subset \mathcal{E}$ that is constructed from the history of the subject. It contains the $S_2$ objects that most recently occurred with $(s, r)$ and the $S_1$ entities that most recently interacted with $s$ under any relation. All inputs of a candidate are computed from events before $t$, once per timestamp, and shared by the queries of that timestamp.
+The dyadic and path intensities are computed on a support set $\mathcal{S}(q) \subset \mathcal{E}$ that is constructed from the history of the subject. It is the union of two parts: the $S_2$ objects that most recently occurred with $(s, r)$, which covers the candidates of a copy mechanism, and the $S_1$ entities that most recently interacted with $s$ under any relation and in either direction, which covers the dyad-only candidates. An entity that appears in both parts is kept once. With $S_1 = 96$ and $S_2 = 64$, only 4.2\% of the ICEWS18 test queries have an answer that interacted with the subject but lies outside the support set; these belong to subjects with very many partners. All inputs of a candidate are computed from events before $t$, once per timestamp, and shared by the queries of that timestamp.
 
 \subsection{Dyadic Intensity}
 
@@ -178,9 +184,18 @@ where $\rho_i$ is the relation type of the $i$-th event and $\delta_i = t - \tau
   \phi(\delta) = \mathbf{W}_\phi \big[\tfrac{1}{4}\ell,\ \sin(\omega_1 \ell), \cos(\omega_1 \ell), \dots, \sin(\omega_8 \ell), \cos(\omega_8 \ell)\big], \quad \ell = \log(1 + \delta),
   \label{eq:time}
 \end{equation}
-with frequencies $\omega_k$ geometrically spaced in $[1, 24]$. Unlike an exponential decay kernel, this encoding does not force the influence of an event to decrease with time. A query token $\mathbf{q} = \mathbf{E}_q[r] + \mathbf{W}_s \mathbf{E}_t[s]$ is placed in front of the sequence, where $\mathbf{E}_t[s]$ is the evolved state of the subject (Sect.~\ref{sec:struct}). The sequence $[\mathbf{q}; \mathbf{x}_1; \dots; \mathbf{x}_L]$ is fed into two Transformer blocks, and the output at the query position is the stream state $\mathbf{z}_{so}$. In this way, repeated facts ($\rho_i = r$), the effect of other relations ($\rho_i \neq r$), events in the opposite direction and the order of events are all modeled by one encoder.
+with frequencies $\omega_k$ geometrically spaced in $[1, 24]$. Unlike an exponential decay kernel, this encoding does not force the influence of an event to decrease with time. A query token $\mathbf{q} = \mathbf{E}_q[r] + \mathbf{W}_s \mathbf{E}_t[s]$ is placed in front of the sequence, where $\mathbf{E}_t[s]$ is the evolved state of the subject (Sect.~\ref{sec:struct}). The sequence $[\mathbf{q}; \mathbf{x}_1; \dots; \mathbf{x}_L]$ is fed into two pre-norm Transformer blocks with multi-head self-attention, and the output at the query position is the stream state $\mathbf{z}_{so}$. Streams with fewer than $L$ events are padded, and padded positions are masked in the attention.
 
-\para{Candidate state.} Because the stream is truncated to $L$ events, we add eight statistics $\mathbf{a}_{so}$ of the full history: the count, recency and mean inter-arrival gap of the triple $(s, r, o)$ and of the dyad $(s, o)$ in logarithmic form, an indicator of whether the triple has occurred, and the ratio of the two counts. We also describe the recent activity of the candidate itself. Its $P_2$ most recent distinct edges $(\rho', o', \delta', c')$, where $c'$ is the number of occurrences, are embedded as $\mathbf{E}_{\rho'} + \phi(\delta') + \mathbf{W}_c \log(1 + c')$ and averaged into a context vector $\mathbf{c}_o$. The candidate state is
+Placing the query relation in the sequence lets the encoder decide which past events matter for this query. Several patterns that are usually handled by separate modules are covered in this way: (i) \emph{repetition}, when earlier events have the type $\rho_i = r$; (ii) \emph{cross-relation influence}, when events of another type make $r$ more likely, e.g., a negotiation followed by an agreement; (iii) \emph{reciprocity}, since events initiated by $o$ appear in the stream with inverse types; and (iv) \emph{order}, because the sequence $\rho_1 \rho_2$ is encoded differently from $\rho_2 \rho_1$.
+
+\para{Candidate state.} Because the stream is truncated to $L$ events, it does not preserve counts over the full history. We therefore add eight statistics
+\begin{equation}
+  \begin{aligned}
+  \mathbf{a}_{so} = \big[&\log(1{+}n_{sro}),\ \log(1{+}\delta_{sro}),\ \log(1{+}\bar{g}_{sro}),\ \mathbf{1}[n_{sro} {>} 0],\\
+  &\log(1{+}n_{so}),\ \log(1{+}\delta_{so}),\ \log(1{+}\bar{g}_{so}),\ n_{sro}/n_{so}\big],
+  \end{aligned}
+\end{equation}
+where $n$, $\delta$ and $\bar{g}$ denote the number of events, the time since the last event and the mean gap between consecutive events, for the triple $(s, r, o)$ and for the dyad $(s, o)$, respectively. We also describe the recent activity of the candidate itself. Its $P_2$ most recent distinct edges $(\rho', o', \delta', c')$, where $c'$ is the number of occurrences, are embedded as $\mathbf{E}_{\rho'} + \phi(\delta') + \mathbf{W}_c \log(1 + c')$ and averaged into a context vector $\mathbf{c}_o$. The candidate state is
 \begin{equation}
   \mathbf{h}_{so} = \mathrm{MLP}\big([\mathbf{z}_{so};\ \mathrm{LN}(\mathbf{a}_{so});\ \mathbf{W}_e \mathbf{E}_t[o];\ \mathbf{c}_o;\ \mathbf{q}_s;\ \mathbf{q}_r]\big),
 \end{equation}
@@ -203,18 +218,36 @@ The messages that arrive at an entity $o'$ are aggregated as $\bar{\mathbf{m}}_{
 \begin{equation}
   \log\lam_{\mathrm{path}}(o' \mid q) = \mathrm{MLP}\big([\mathrm{LN}(\bar{\mathbf{m}}_{o'});\ \log(1+n_{o'});\ \mathbf{W}_e \mathbf{E}_t[o'];\ \mathbf{q}_s;\ \mathbf{q}_r]\big) + b_{\mathrm{path}},
 \end{equation}
-and $-\infty$ for entities that no path reaches. A path thus combines the event stream between $s$ and $x$ with a typed and timed edge from $x$ to $o'$. Since the first-hop states are already available, the extra cost is one gather and one scatter operation per batch.
+and $-\infty$ for entities that no path reaches. A path thus combines the full event stream between $s$ and $x$, summarized in $\mathbf{h}'_{sx}$, with a typed and timed edge from $x$ to $o'$. It can be viewed as a learned two-hop temporal rule whose first step is a sequence of events instead of a single fact. The normalization by $n_{o'}^{-1/2}$ keeps the scale of the aggregated message stable, and the number of paths is given to the scoring network separately. Since the first-hop states are already available, the extra cost is one gather and one scatter operation per batch.
 
 \subsection{Popularity and Structural Intensities}
 \label{sec:struct}
 
-\para{Popularity.} For each relation $r$ in the queries of timestamp $t$, we compute decayed counts of $(\cdot, r, o)$ events at the scales $\tau \in \{1, 4, 16, 64\}$ and the total count, as well as the same five counts of $o$ under any relation. The ten values in logarithmic form are passed through a small network conditioned on the relation embedding to obtain $\log\lam_{\mathrm{pop}}(o \mid q)$ for all entities.
+\para{Popularity.} This component captures which entities are currently frequent objects, independently of the subject. For a relation $r$ and an entity $o$ we compute the decayed count
+\begin{equation}
+  c^{\tau}_{ro}(t) = \sum_{(\cdot, r, o, t') \in \mathcal{G},\ t' < t} \exp\!\big(-(t - t' - 1)/\tau\big), \qquad \tau \in \{1, 4, 16, 64\},
+\end{equation}
+together with the undecayed count, and the same five counts $c^{\tau}_{o}(t)$ of $o$ as an object under any relation. Let $\mathbf{c}_{ro}$ collect the ten values. Then
+\begin{equation}
+  \log\lam_{\mathrm{pop}}(o \mid q) = \mathbf{w}_p^\top\, \mathrm{GELU}\big(\mathbf{W}_p \log(1 + \mathbf{c}_{ro}) + \mathbf{W}'_r \mathbf{R}[r]\big) + b_{\mathrm{pop}} ,
+\end{equation}
+which is evaluated for all entities. The multiple scales allow the model to distinguish short bursts from long-term popularity.
 
-\para{Structure.} Following snapshot-based models~\cite{li2021regcn,dong2025dimnet}, the entity states $\mathbf{E}_t$ are obtained by evolving the initial embeddings over the last $H$ snapshots. Each snapshot is processed by a relational message passing layer with mean and max aggregation, and a GRU cell updates the states across snapshots. A ConvTransE decoder scores $\mathbf{E}_t[s]$ and $\mathbf{R}[r]$ against all entities to obtain $\log\lam_{\mathrm{struct}}(o \mid q)$. We use layer normalization instead of batch normalization in the decoder because the batches are snapshots of very different sizes.
+\para{Structure.} Following snapshot-based models~\cite{li2021regcn,dong2025dimnet}, the entity states $\mathbf{E}_t$ are obtained by evolving the initial embeddings $\mathbf{E}_0$ over the last $H$ snapshots. In the snapshot at time $\tau$, layer $l$ updates the state of entity $v$ as
+\begin{equation}
+  \mathbf{h}^{(l)}_{v,\tau} = \mathrm{LN}\Big(\mathrm{ReLU}\big(\mathbf{W}_a\big[\operatorname*{mean}_{\mathcal{N}_\tau(v)} \mathbf{m}_{u\rho};\ \max_{\mathcal{N}_\tau(v)} \mathbf{m}_{u\rho}\big] + \mathbf{W}_0 \mathbf{h}^{(l-1)}_{v,\tau} + \mathbf{W}_c \mathbf{h}^{(l)}_{v,\tau-1}\big)\Big),
+\end{equation}
+where $\mathbf{m}_{u\rho} = \mathbf{W}_m(\mathbf{h}^{(l-1)}_{u,\tau} + \mathbf{R}[\rho])$ is the message from a neighbor $u$ connected by relation $\rho$, $\mathcal{N}_\tau(v)$ is the set of such pairs $(u, \rho)$ in the snapshot, and the last term links each layer to the same layer at the previous snapshot. A GRU cell updates the entity states across snapshots, and a gate $\mathbf{u} = \sigma(\mathbf{W}_g[\hat{\mathbf{E}}_t; \mathbf{E}_0])$ combines the evolved states with the initial embeddings, $\mathbf{E}_t = \mathbf{u} \odot \hat{\mathbf{E}}_t + (1 - \mathbf{u}) \odot \mathbf{E}_0$. A ConvTransE decoder scores $\mathbf{E}_t[s]$ and $\mathbf{R}[r]$ against all entities to obtain $\log\lam_{\mathrm{struct}}(o \mid q)$. We use layer normalization instead of batch normalization in the decoder because the batches are snapshots of very different sizes. This component is not new; it provides the entity states used by the other components and scores entities that have no history with the subject.
 
 \subsection{Training and Complexity}
 
-Training proceeds timestamp by timestamp. For a timestamp $t$, the structural states and popularity counts are computed once, and the queries at $t$ are processed in chunks with a bounded number of (query, candidate) pairs. For a query, the dyadic component encodes at most $S_1 + S_2$ sequences of length $L + 1$ and the path component handles at most $(S_1 + S_2) P_2$ edges, so the cost per query does not depend on $N$ except for the two components that score all entities. Support sets, streams and edges are built in the data loader from the sorted event lists of the entities, using only events before $t$.
+\para{Objective.} The model is trained with the cross-entropy loss on the probabilities of Eq.~(\ref{eq:prob}) with label smoothing. Since the dyadic component fits repeated facts quickly, the structural component receives little gradient in the first epochs; we therefore add an auxiliary cross-entropy term on the structural intensity alone:
+\begin{equation}
+  \mathcal{L} = \sum_{q} \Big[\mathrm{CE}\big(P(\cdot \mid q),\, o^\star_q\big) + \alpha\, \mathrm{CE}\big(\mathrm{softmax}(\log\lam_{\mathrm{struct}}(\cdot \mid q)),\, o^\star_q\big)\Big],
+\end{equation}
+where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
+
+\para{Procedure and cost.} Training proceeds timestamp by timestamp. For a timestamp $t$, the structural states and popularity counts are computed once, and the queries at $t$ are processed in chunks with a bounded number of (query, candidate) pairs. For a query, the dyadic component encodes at most $S_1 + S_2$ sequences of length $L + 1$ and the path component handles at most $(S_1 + S_2) P_2$ edges, so the cost per query does not depend on $N$ except for the two components that score all entities. Support sets, streams and edges are built in the data loader from the time-sorted event lists of the entities. Only events before $t$ are read, so no information from the query time or later is used.
 
 % ─────────────────────────────────────────────────────────────────────────
 \section{Experiments}
@@ -247,7 +280,7 @@ Training proceeds timestamp by timestamp. For a timestamp $t$, the structural st
 
 \para{Evaluation metrics.} We report MRR and Hits@$k$ (\hone{}, \hten{}) in percent under the time-aware filtered setting~\cite{gastinger2023apples}, in which only the other true objects of $(s, r)$ at the query time are removed from the ranking. If several entities have the same score as the answer, the average rank is used.
 
-\para{Implementation details.} The embedding dimension is 200, and the structural encoder has two layers with history length $H = 10$ ($5$ on GDELT). The stream encoder has dimension 64 and four heads; the stream length is $L = 10$ ($16$ on YAGO and WIKI, $8$ on GDELT). We set $S_1 = 96$, $S_2 = 64$ ($48$ on YAGO and WIKI) and $P_2 = 16$. The model is trained with AdamW (learning rate $10^{-3}$, weight decay $10^{-3}$) for at most 20 epochs with early stopping on validation MRR (patience 6), label smoothing 0.1 (0.05 on YAGO and WIKI) and dropout 0.25 (0.15 on YAGO and WIKI). The attention across candidates is enabled on ICEWS18, ICEWS14s and GDELT and disabled on YAGO and WIKI; this choice is made on validation MRR for every dataset. All experiments run on one NVIDIA A100 (40\,GB) GPU; one epoch takes about 3 minutes on ICEWS18 and 15 minutes on GDELT. We report the mean of three random seeds.
+\para{Implementation details.} The embedding dimension is 200, and the structural encoder has two layers with history length $H = 10$ ($5$ on GDELT). The stream encoder has dimension 64 and four heads; the stream length is $L = 10$ ($16$ on YAGO and WIKI, $8$ on GDELT). We set $S_1 = 96$ ($64$ on GDELT, $48$ on YAGO and WIKI), $S_2 = 64$ ($48$ on GDELT) and $P_2 = 16$. The model is trained with AdamW (learning rate $10^{-3}$, weight decay $10^{-3}$) for at most 20 epochs with early stopping on validation MRR (patience 6), label smoothing 0.1 (0.05 on YAGO and WIKI), dropout 0.25 (0.15 on YAGO and WIKI) and $\alpha = 0.3$ ($0$ on YAGO and WIKI). The attention across candidates is enabled on ICEWS18, ICEWS14s and GDELT and disabled on YAGO and WIKI; this choice is made on validation MRR for every dataset. All experiments run on one NVIDIA A100 (40\,GB) GPU; one epoch takes about 3 minutes on ICEWS18 and 15 minutes on GDELT. We report the mean of three random seeds.
 
 \subsection{Overall Performance}
 
@@ -391,7 +424,7 @@ Table~\ref{tab:ablation} shows the effect of removing one component at a time on
 
 \para{Attention across candidates.} This block improves MRR by 0.25 on ICEWS18, 0.25 on ICEWS14s (47.18 to 47.43) and 0.09 on GDELT (27.01 to 27.10), and reduces it by 0.20 on YAGO and 0.13 on WIKI. On the yearly datasets a query usually has a single candidate with an ongoing fact, so comparing candidates brings no benefit. The validation MRR leads to the same choice on all five datasets.
 
-\para{Components without clear effect.} The popularity intensity and the candidate context change the results by less than the seed variance on both datasets. We keep them in the model for completeness and report them as such.
+\para{Components without clear effect.} The popularity intensity and the candidate context change the results by less than the seed variance on both datasets. Our implementation further contains a prototype term that scores all entities by their similarity to an attention-weighted average of the support entities; removing it changes MRR by $+0.05$ on ICEWS18 and $-0.16$ on YAGO, which is also within the seed variance, so we do not describe it in Sect.~\ref{sec:method}. We report these components as having no clear effect.
 
 % ─────────────────────────────────────────────────────────────────────────
 \section{Conclusion}

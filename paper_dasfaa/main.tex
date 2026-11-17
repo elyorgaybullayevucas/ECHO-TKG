@@ -34,7 +34,7 @@
 \maketitle
 
 \begin{abstract}
-Temporal knowledge graph (TKG) forecasting predicts the missing object of a query $(s, r, ?, t)$ from the facts observed before $t$. Most strong models rely on the history of the query pair $(s, r)$, either through a copy mechanism or through a graph built from that history. We find that this view leaves out a large part of the available evidence. On ICEWS18, 23.4\% of the test queries have an answer that never appeared with $(s, r)$ but did interact with the subject under another relation, and copy-based scoring cannot rank such answers at all. We therefore take the \emph{dyad}, i.e., the entity pair $(s, o)$ together with all typed and timestamped events between the two entities, as the basic unit of evidence, and propose \model{}. \model{} adds four intensities: a structural intensity from snapshot evolution, a popularity intensity, a dyadic intensity that encodes the event stream of each dyad with a small Transformer, and a path intensity that propagates dyadic states along the recent edges of each candidate. Experiments on five benchmarks show that \model{} obtains the best MRR and Hits@1 on YAGO, WIKI and GDELT among the compared methods and competitive results on ICEWS. A stratified evaluation further shows where each component contributes.
+Temporal knowledge graph (TKG) forecasting predicts the missing object of a query $(s, r, ?, t)$ from the facts observed before $t$. Most strong models rely on the history of the query pair $(s, r)$, either through a copy mechanism or through a graph built from that history. We find that this view leaves out a large part of the available evidence. On ICEWS18, 23.4\% of the test queries have an answer that never appeared with $(s, r)$ but did interact with the subject under another relation, and copy-based scoring cannot rank such answers at all. We therefore take the \emph{dyad}, i.e., the entity pair $(s, o)$ together with all typed and timestamped events between the two entities, as the basic unit of evidence, and propose \model{}. \model{} adds four intensities: a structural intensity from snapshot evolution, a popularity intensity, a dyadic intensity that encodes the event stream of each dyad with a small Transformer, and a path intensity that propagates dyadic states along the recent edges of each candidate. Experiments on four benchmarks show that \model{} obtains the best MRR and Hits@1 among the compared methods on all of them. A stratified evaluation further shows where each component contributes.
 
 \keywords{Temporal knowledge graph \and Link forecasting \and Event streams \and Point process \and Stratified evaluation}
 \end{abstract}
@@ -64,9 +64,9 @@ Based on these observations we propose \model{}. It models the answer of a query
 
 Our contributions are summarized as follows:
 \begin{enumerate}
-  \item We introduce a data-only analysis that splits test queries into recurrent, dyad-only and cold strata, and show that the dyad-only stratum accounts for about a quarter of the ICEWS queries and cannot be handled by copy mechanisms.
+  \item We introduce a data-only analysis that splits test queries into recurrent, dyad-only and cold strata, and show that the dyad-only stratum accounts for about a quarter of the ICEWS18 queries and cannot be handled by copy mechanisms.
   \item We propose \model{}, which adds four intensities and encodes the typed and timed event stream of each dyad with a Transformer, together with a path intensity and attention across the candidates of a query.
-  \item We conduct experiments on five benchmarks with three seeds. \model{} achieves the best MRR and \hone{} on YAGO, WIKI and GDELT among the compared methods and competitive results on ICEWS18 and ICEWS14s.
+  \item We conduct experiments on four benchmarks with three seeds. \model{} achieves the best MRR and \hone{} on ICEWS18, GDELT, YAGO and WIKI among the compared methods.
   \item We provide a stratified evaluation and ablation study, which show that each component contributes on the stratum it is designed for, and which also identify the queries where the model remains weak.
 \end{enumerate}
 
@@ -107,36 +107,34 @@ We first examine the data without training a model. Two questions are considered
 
 \begin{figure}[t]
   \centering
-  \includegraphics[width=0.66\textwidth]{figures/fig_strata.pdf}
-  \caption{Share of test queries in each stratum. The dyad-only stratum is large on the ICEWS datasets and nearly empty on YAGO and WIKI.}
+  \includegraphics[width=0.7\textwidth]{figures/fig_strata.pdf}
+  \caption{Share of test queries in each stratum. The dyad-only stratum is large on ICEWS18 and nearly empty on YAGO and WIKI.}
   \label{fig:strata}
 \end{figure}
 
-\para{Size of the strata.} Fig.~\ref{fig:strata} shows the proportions. On both ICEWS datasets about half of the queries are recurrent, and the dyad-only and cold strata each take about a quarter. On YAGO and WIKI most facts last for years, so the dyad-only stratum is only 0.1\%. We therefore expect a model that reads the dyad to gain on ICEWS but not on YAGO and WIKI. This expectation is examined in Sect.~\ref{sec:ablation}.
+\para{Size of the strata.} Fig.~\ref{fig:strata} shows the proportions. On ICEWS18 about half of the queries are recurrent (50.6\%), and the dyad-only and cold strata each take about a quarter (23.4\% and 26.0\%). On YAGO and WIKI most facts last for years, so the dyad-only stratum is only 0.1\%. We therefore expect a model that reads the dyad to gain on event data but not on YAGO and WIKI. This expectation is examined in Sect.~\ref{sec:ablation}.
 
 \para{Untrained counters.} We compare simple counters that share the time decay $w(\Delta) = e^{-0.3\Delta} + 0.2\,e^{-0.02\Delta} + 0.02$ and use only events before the query time. \emph{Recurrence} sums $w$ over past $(s, r, o)$ events. \emph{Blind dyad} sums $w$ over all past events between $s$ and $o$. \emph{Typed dyad} additionally weights each event of type $\rho$ by the frequency, counted on the training set, with which a $\rho$ event on a dyad is followed by an $r$ event within seven steps. \emph{Popularity} sums $w$ over past $(\cdot, r, o)$ events. \emph{Backoff} ranks by recurrence, then typed dyad, then popularity.
 
 \begin{table}[t]
   \centering
-  \caption{Results of untrained counters (time-aware filtered, in \%). ICEWS18 is evaluated on 30,000 sampled test queries and ICEWS14s on all test queries.}
+  \caption{Results of untrained counters on ICEWS18 (time-aware filtered, in \%), evaluated on 30,000 sampled test queries.}
   \label{tab:diag}
-  \setlength{\tabcolsep}{6pt}
-  \begin{tabular}{l ccc ccc}
+  \setlength{\tabcolsep}{8pt}
+  \begin{tabular}{l ccc}
     \toprule
-    & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{ICEWS14s} \\
-    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
-    Counter & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} \\
+    Counter & MRR & \hone{} & \hten{} \\
     \midrule
-    Recurrence & 28.02 & 20.93 & 41.41 & 37.08 & 30.80 & 48.50 \\
-    Blind dyad & 24.55 & 14.71 & 45.10 & 36.78 & 26.43 & 57.31 \\
-    Typed dyad & 30.65 & 21.05 & 49.82 & 42.72 & 33.73 & 60.39 \\
-    Popularity & 12.09 &  6.64 & 23.13 & 15.50 &  8.21 & 30.19 \\
-    Backoff    & \textbf{31.82} & \textbf{22.55} & \textbf{49.88} & \textbf{43.26} & \textbf{34.08} & \textbf{60.85} \\
+    Recurrence & 28.02 & 20.93 & 41.41 \\
+    Blind dyad & 24.55 & 14.71 & 45.10 \\
+    Typed dyad & 30.65 & 21.05 & 49.82 \\
+    Popularity & 12.09 &  6.64 & 23.13 \\
+    Backoff    & \textbf{31.82} & \textbf{22.55} & \textbf{49.88} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Table~\ref{tab:diag} lists the results. Using the dyad instead of the triple history improves MRR from 28.0 to 31.8 on ICEWS18 and from 37.1 to 43.3 on ICEWS14s. For reference, the reported MRR of DaeMon on ICEWS18 is 31.85~\cite{dong2025dimnet} and that of TLogic on ICEWS14 is 43.04~\cite{liu2022tlogic}. On the dyad-only stratum, where recurrence scores zero, the blind dyad counter reaches 42.3 \hten{} on ICEWS18.
+Table~\ref{tab:diag} lists the results. Using the dyad instead of the triple history improves MRR from 28.0 to 31.8 and \hten{} from 41.4 to 49.9. For reference, the reported MRR of DaeMon on this dataset is 31.85~\cite{dong2025dimnet}. On the dyad-only stratum, where recurrence scores zero, the blind dyad counter reaches 42.3 \hten{}.
 
 Two limitations of the counters guide the model design. First, on the dyad-only stratum the typed counter is not better than the blind one (20.33 vs.\ 20.01 MRR on ICEWS18), which suggests that a fixed confidence per relation pair is too weak to use relation types and that a sequence model is needed. Second, none of the counters reaches the cold stratum. However, 54\% of the cold answers on ICEWS18 are neighbors of one of the 96 most recent partners of the subject. This motivates the path intensity in Sect.~\ref{sec:path}.
 
@@ -256,7 +254,7 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
 \subsection{Experimental Setup}
 \label{sec:setup}
 
-\para{Datasets.} We use five benchmarks in the versions released with RE-GCN and CEN~\cite{li2021regcn,li2022cen}: ICEWS14s, ICEWS18, GDELT, YAGO and WIKI. Table~\ref{tab:data} gives their statistics. All datasets are split chronologically. We do not use the static entity graph that some previous methods add on ICEWS.
+\para{Datasets.} We use four benchmarks in the versions released with RE-GCN~\cite{li2021regcn}: ICEWS18, GDELT, YAGO and WIKI. Table~\ref{tab:data} gives their statistics. All datasets are split chronologically. We do not use the static entity graph that some previous methods add on ICEWS18.
 
 \begin{table}[t]
   \centering
@@ -267,7 +265,6 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
     \toprule
     Dataset & $|\mathcal{E}|$ & $|\mathcal{R}|$ & Train & Valid & Test & Snapshots & Granularity \\
     \midrule
-    ICEWS14s & 7,128 & 230 & 74,845 & 8,514 & 7,371 & 365 & 1 day \\
     ICEWS18 & 23,033 & 256 & 373,018 & 45,995 & 49,545 & 304 & 1 day \\
     GDELT & 7,691 & 240 & 1,734,399 & 238,765 & 305,241 & 2,975 & 15 min \\
     YAGO & 10,623 & 10 & 161,540 & 19,523 & 20,026 & 189 & 1 year \\
@@ -276,11 +273,11 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
   \end{tabular}
 \end{table}
 
-\para{Baselines.} We compare with CyGNet~\cite{zhu2021cygnet}, xERTE~\cite{han2021xerte}, TITer~\cite{sun2021titer}, RE-GCN~\cite{li2021regcn}, CEN~\cite{li2022cen}, TiRGN~\cite{li2022tirgn}, DaeMon~\cite{dong2023daemon}, TiPNN~\cite{dong2024tipnn}, DiMNet~\cite{dong2025dimnet}, CognTKE~\cite{chen2025cogntke} and LogCL~\cite{chen2024logcl}, as well as the recurrency baseline~\cite{gastinger2024history} and CountTRuCoLa~\cite{gastinger2026counttrucola}. Baseline results are taken from the original papers or from the result tables of DaeMon~\cite{dong2023daemon}, CEN~\cite{li2022cen} and DiMNet~\cite{dong2025dimnet}. A dash means that no result under the same dataset version is reported. We also ran LogCL with our evaluation code on ICEWS18 and obtained 36.0 MRR, which agrees with its reported 35.67.
+\para{Baselines.} We compare with CyGNet~\cite{zhu2021cygnet}, xERTE~\cite{han2021xerte}, TITer~\cite{sun2021titer}, RE-GCN~\cite{li2021regcn}, CEN~\cite{li2022cen}, TiRGN~\cite{li2022tirgn}, DaeMon~\cite{dong2023daemon}, TiPNN~\cite{dong2024tipnn}, DiMNet~\cite{dong2025dimnet}, CognTKE~\cite{chen2025cogntke} and LogCL~\cite{chen2024logcl}, as well as the recurrency baseline~\cite{gastinger2024history} and CountTRuCoLa~\cite{gastinger2026counttrucola}. Baseline results are taken from the original papers or from the result tables of DaeMon~\cite{dong2023daemon} and DiMNet~\cite{dong2025dimnet}. A dash means that no result is reported. We also ran LogCL with our evaluation code on ICEWS18 and obtained 36.0 MRR, which agrees with its reported 35.67.
 
 \para{Evaluation metrics.} We report MRR and Hits@$k$ (\hone{}, \hten{}) in percent under the time-aware filtered setting~\cite{gastinger2023apples}, in which only the other true objects of $(s, r)$ at the query time are removed from the ranking. If several entities have the same score as the answer, the average rank is used.
 
-\para{Implementation details.} The embedding dimension is 200, and the structural encoder has two layers with history length $H = 10$ ($5$ on GDELT). The stream encoder has dimension 64 and four heads; the stream length is $L = 10$ ($16$ on YAGO and WIKI, $8$ on GDELT). We set $S_1 = 96$ ($64$ on GDELT, $48$ on YAGO and WIKI), $S_2 = 64$ ($48$ on GDELT) and $P_2 = 16$. The model is trained with AdamW (learning rate $10^{-3}$ with linear warm-up and cosine decay, weight decay $10^{-3}$, gradient clipping at 1) for at most 20 epochs with early stopping on validation MRR (patience 6), label smoothing 0.1 (0.05 on YAGO and WIKI), dropout 0.25 (0.15 on YAGO and WIKI) and $\alpha = 0.3$ ($0$ on YAGO and WIKI). The attention across candidates is enabled on ICEWS18, ICEWS14s and GDELT and disabled on YAGO and WIKI; this choice is made on validation MRR for every dataset. All experiments run on one NVIDIA A100 (40\,GB) GPU; one epoch takes about 3 minutes on ICEWS18 and 15 minutes on GDELT. We report the mean of three random seeds.
+\para{Implementation details.} The embedding dimension is 200, and the structural encoder has two layers with history length $H = 10$ ($5$ on GDELT). The stream encoder has dimension 64 and four heads; the stream length is $L = 10$ ($16$ on YAGO and WIKI, $8$ on GDELT). We set $S_1 = 96$ ($64$ on GDELT, $48$ on YAGO and WIKI), $S_2 = 64$ ($48$ on GDELT) and $P_2 = 16$. The model is trained with AdamW (learning rate $10^{-3}$ with linear warm-up and cosine decay, weight decay $10^{-3}$, gradient clipping at 1) for at most 20 epochs with early stopping on validation MRR (patience 6), label smoothing 0.1 (0.05 on YAGO and WIKI), dropout 0.25 (0.15 on YAGO and WIKI) and $\alpha = 0.3$ ($0$ on YAGO and WIKI). The attention across candidates is enabled on ICEWS18 and GDELT and disabled on YAGO and WIKI; this choice is made on validation MRR for every dataset. All experiments run on one NVIDIA A100 (40\,GB) GPU; one epoch takes about 3 minutes on ICEWS18 and 15 minutes on GDELT. We report the mean of three random seeds.
 
 \subsection{Overall Performance}
 
@@ -288,29 +285,29 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
   \centering
   \caption{Results on the event datasets (time-aware filtered, in \%). The best results are in \textbf{bold} and the second best are \underline{underlined}.}
   \label{tab:main}
-  \setlength{\tabcolsep}{2.6pt}
+  \setlength{\tabcolsep}{5pt}
   \small
-  \begin{tabular}{l ccc ccc ccc}
+  \begin{tabular}{l ccc ccc}
     \toprule
-    & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{ICEWS14s} & \multicolumn{3}{c}{GDELT} \\
-    \cmidrule(lr){2-4}\cmidrule(lr){5-7}\cmidrule(lr){8-10}
-    Method & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} \\
+    & \multicolumn{3}{c}{ICEWS18} & \multicolumn{3}{c}{GDELT} \\
+    \cmidrule(lr){2-4}\cmidrule(lr){5-7}
+    Method & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} \\
     \midrule
-    Recurrency~\cite{gastinger2024history} & 28.7 & -- & -- & -- & -- & -- & \underline{24.5} & -- & -- \\
-    CyGNet~\cite{zhu2021cygnet} & 24.93 & 15.90 & 42.61 & -- & -- & -- & 18.48 & 11.52 & 31.98 \\
-    xERTE~\cite{han2021xerte} & 29.31 & 21.03 & 45.60 & -- & -- & -- & 18.09 & 12.30 & 30.34 \\
-    TITer~\cite{sun2021titer} & 29.98 & 22.05 & 44.83 & -- & -- & -- & 15.46 & 10.98 & 24.31 \\
-    RE-GCN~\cite{li2021regcn} & 30.58 & 21.01 & 48.75 & 40.39 & 30.66 & 59.21 & 19.64 & 12.42 & 33.69 \\
-    CEN~\cite{li2022cen} & 30.84 & 21.23 & 49.67 & -- & -- & -- & 20.18 & 12.84 & 34.10 \\
-    TiRGN~\cite{li2022tirgn} & 33.66 & 23.19 & 54.22 & 44.04 & 33.83 & 63.84 & 21.67 & 13.63 & 37.60 \\
-    DaeMon~\cite{dong2023daemon} & 31.85 & 22.67 & 49.80 & -- & -- & -- & 20.73 & 13.65 & 34.23 \\
-    TiPNN~\cite{dong2024tipnn} & 32.17 & 22.74 & 50.72 & -- & -- & -- & 21.17 & 14.03 & 34.76 \\
-    CountTRuCoLa~\cite{gastinger2026counttrucola} & 32.8 & -- & -- & -- & -- & -- & 23.8 & -- & -- \\
-    DiMNet~\cite{dong2025dimnet} & 34.13 & 23.29 & 55.80 & -- & -- & -- & 21.93 & 14.03 & 37.49 \\
-    CognTKE~\cite{chen2025cogntke} & 35.24 & -- & -- & -- & -- & -- & -- & -- & -- \\
-    LogCL~\cite{chen2024logcl} & \underline{35.67} & \underline{24.53} & \textbf{57.74} & \textbf{48.87} & \textbf{37.76} & \textbf{70.26} & 23.75 & \underline{14.64} & \underline{42.33} \\
+    Recurrency~\cite{gastinger2024history} & 28.7 & -- & -- & \underline{24.5} & -- & -- \\
+    CyGNet~\cite{zhu2021cygnet} & 24.93 & 15.90 & 42.61 & 18.48 & 11.52 & 31.98 \\
+    xERTE~\cite{han2021xerte} & 29.31 & 21.03 & 45.60 & 18.09 & 12.30 & 30.34 \\
+    TITer~\cite{sun2021titer} & 29.98 & 22.05 & 44.83 & 15.46 & 10.98 & 24.31 \\
+    RE-GCN~\cite{li2021regcn} & 30.58 & 21.01 & 48.75 & 19.64 & 12.42 & 33.69 \\
+    CEN~\cite{li2022cen} & 30.84 & 21.23 & 49.67 & 20.18 & 12.84 & 34.10 \\
+    TiRGN~\cite{li2022tirgn} & 33.66 & 23.19 & 54.22 & 21.67 & 13.63 & 37.60 \\
+    DaeMon~\cite{dong2023daemon} & 31.85 & 22.67 & 49.80 & 20.73 & 13.65 & 34.23 \\
+    TiPNN~\cite{dong2024tipnn} & 32.17 & 22.74 & 50.72 & 21.17 & 14.03 & 34.76 \\
+    CountTRuCoLa~\cite{gastinger2026counttrucola} & 32.8 & -- & -- & 23.8 & -- & -- \\
+    DiMNet~\cite{dong2025dimnet} & 34.13 & 23.29 & 55.80 & 21.93 & 14.03 & 37.49 \\
+    CognTKE~\cite{chen2025cogntke} & 35.24 & -- & -- & -- & -- & -- \\
+    LogCL~\cite{chen2024logcl} & \underline{35.67} & \underline{24.53} & \textbf{57.74} & 23.75 & \underline{14.64} & \underline{42.33} \\
     \midrule
-    \model{} & \textbf{36.54} & \textbf{26.36} & \underline{56.21} & \underline{47.43} & \underline{37.49} & \underline{66.16} & \textbf{27.10} & \textbf{18.16} & \textbf{44.62} \\
+    \model{} & \textbf{36.54} & \textbf{26.36} & \underline{56.21} & \textbf{27.10} & \textbf{18.16} & \textbf{44.62} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -347,34 +344,34 @@ Tables~\ref{tab:main} and~\ref{tab:yearly} report the comparison. We make the fo
 
 (2) On YAGO and WIKI, \model{} obtains the best MRR and \hone{}. Compared with DaeMon, \hone{} increases by 0.54 on YAGO and 2.18 on WIKI, while DaeMon is slightly better on \hten{}. The standard deviations of MRR over three seeds are 0.20 and 0.12, respectively.
 
-(3) On ICEWS18, \model{} obtains the best MRR and \hone{}, 0.87 and 1.83 points above LogCL, while LogCL is better on \hten{} (57.74 vs.\ 56.21). On ICEWS14s, \model{} is second to LogCL on all three metrics. On both datasets \model{} is weaker on \hten{} than on MRR. As the next subsection shows, this is related to the cold strata, where the answer has no interaction history with the subject and the dyadic and path intensities have little or no input.
+(3) On ICEWS18, \model{} obtains the best MRR and \hone{}, 0.87 and 1.83 points above LogCL, while LogCL is better on \hten{} (57.74 vs.\ 56.21). As the next subsection shows, the weaker \hten{} is related to the cold strata, where the answer has no interaction history with the subject and the dyadic and path intensities have little or no input.
 
 \subsection{Stratified Evaluation}
 
 \begin{table}[t]
   \centering
-  \caption{Performance of \model{} on each stratum (mean of three seeds, in \%).}
+  \caption{Performance of \model{} on each stratum (mean of three seeds, in \%). Share is the percentage of ICEWS18 test queries in the stratum.}
   \label{tab:strata}
-  \setlength{\tabcolsep}{4pt}
+  \setlength{\tabcolsep}{5pt}
   \small
-  \begin{tabular}{l rccc rccc}
+  \begin{tabular}{l rccc ccc}
     \toprule
-    & \multicolumn{4}{c}{ICEWS18} & \multicolumn{4}{c}{ICEWS14s} \\
-    \cmidrule(lr){2-5}\cmidrule(lr){6-9}
-    Stratum & Share & MRR & \hone{} & \hten{} & Share & MRR & \hone{} & \hten{} \\
+    & \multicolumn{4}{c}{ICEWS18} & \multicolumn{3}{c}{GDELT} \\
+    \cmidrule(lr){2-5}\cmidrule(lr){6-8}
+    Stratum & Share & MRR & \hone{} & \hten{} & MRR & \hone{} & \hten{} \\
     \midrule
-    cold-far   & 17.8 &  1.75 &  0.57 &  2.98 & 15.9 &  2.19 &  0.53 &  4.42 \\
-    cold-2hop  & 14.0 &  9.43 &  3.40 & 20.67 & 12.0 & 11.28 &  3.38 & 27.92 \\
-    dyad-only  & 19.2 & 29.82 & 17.06 & 57.26 & 21.2 & 37.54 & 23.44 & 67.20 \\
-    blocked    & 25.7 & 34.95 & 16.76 & 72.55 & 16.6 & 38.44 & 17.65 & 79.68 \\
-    clean      & 23.4 & 86.43 & 77.87 & 99.07 & 34.4 & 90.50 & 84.18 & 99.33 \\
+    cold-far   & 17.8 &  1.75 &  0.57 &  2.98 &  0.66 &  0.04 &  0.55 \\
+    cold-2hop  & 14.0 &  9.43 &  3.40 & 20.67 &  2.04 &  0.07 &  2.71 \\
+    dyad-only  & 19.2 & 29.82 & 17.06 & 57.26 & 15.12 &  5.84 & 34.93 \\
+    blocked    & 25.7 & 34.95 & 16.76 & 72.55 & 20.95 &  6.38 & 54.12 \\
+    clean      & 23.4 & 86.43 & 77.87 & 99.07 & 81.19 & 69.95 & 98.84 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 Table~\ref{tab:strata} reports the results of \model{} on each stratum. Here the strata are determined with respect to the support set of the model: an answer outside the support set is counted as cold even if it interacted with the subject long ago, so the dyad-only share is slightly smaller than in Fig.~\ref{fig:strata}.
 
-The clean stratum is almost solved, with \hten{} above 99\% on both datasets. On the blocked stratum, where count and recency alone cannot rank the answer first, \model{} still obtains 16.8\% \hone{} and 72.6\% \hten{} on ICEWS18, which indicates that it uses information beyond these two statistics. On the dyad-only stratum, \model{} achieves 29.8 MRR and 57.3 \hten{} on ICEWS18, compared with 20.0 and 42.3 for the blind dyad counter in Sect.~\ref{sec:diag}. The two cold strata, which cover about one third of the queries, are the main weakness. The path intensity finds the answer of a cold-2hop query in the top ten in about 20\% of the cases, and cold-far answers are rarely found. On GDELT the same ordering of the strata is observed (MRR from 0.7 on cold-far to 81.2 on clean).
+The clean stratum is almost solved, with \hten{} of about 99\% on both datasets. On the blocked stratum, where count and recency alone cannot rank the answer first, \model{} still obtains 16.8\% \hone{} and 72.6\% \hten{} on ICEWS18, which indicates that it uses information beyond these two statistics. On the dyad-only stratum, \model{} achieves 29.8 MRR and 57.3 \hten{} on ICEWS18, compared with 20.0 and 42.3 for the blind dyad counter in Sect.~\ref{sec:diag}. The two cold strata, which cover about one third of the queries, are the main weakness. The path intensity finds the answer of a cold-2hop query in the top ten in about 20\% of the cases, and cold-far answers are rarely found. GDELT shows the same ordering of the strata at a lower level, and its cold strata are almost unreachable.
 
 \subsection{Ablation Study}
 \label{sec:ablation}
@@ -420,7 +417,7 @@ Table~\ref{tab:ablation} shows the effect of removing one component at a time on
 
 \para{Effect on strata.} Fig.~\ref{fig:ablation-strata} breaks the ablation down by stratum. The path intensity matters most on cold-2hop ($-1.42$ MRR when removed), the relation types on the blocked stratum ($-1.02$), the stream encoder on the dyad-only and blocked strata ($-1.85$ and $-1.35$), and the structural intensity on the two cold strata ($-0.72$ and $-1.67$). Each component therefore contributes mainly on the queries it is designed for, which is consistent with the additive combination in Eq.~(\ref{eq:super}).
 
-\para{Attention across candidates.} This block improves MRR by 0.25 on ICEWS18, 0.25 on ICEWS14s (47.18 to 47.43) and 0.09 on GDELT (27.01 to 27.10), and reduces it by 0.20 on YAGO and 0.13 on WIKI. On the yearly datasets a query usually has a single candidate with an ongoing fact, so comparing candidates brings no benefit. The validation MRR leads to the same choice on all five datasets.
+\para{Attention across candidates.} This block improves MRR by 0.25 on ICEWS18 and 0.09 on GDELT (27.01 to 27.10), and reduces it by 0.20 on YAGO and 0.13 on WIKI. On the yearly datasets a query usually has a single candidate with an ongoing fact, so comparing candidates brings no benefit. The validation MRR leads to the same choice on all four datasets.
 
 \para{Components without clear effect.} The popularity intensity and the candidate context change the results by less than the seed variance on both datasets. Our implementation further contains a prototype term that scores all entities by their similarity to an attention-weighted average of the support entities; removing it changes MRR by $+0.05$ on ICEWS18 and $-0.16$ on YAGO, which is also within the seed variance, so we do not describe it in Sect.~\ref{sec:method}. We report these components as having no clear effect.
 
@@ -428,9 +425,9 @@ Table~\ref{tab:ablation} shows the effect of removing one component at a time on
 \section{Conclusion}
 \label{sec:conclusion}
 
-\para{Summary.} In this paper, we studied which historical evidence a TKG forecasting model should read. A data-only analysis showed that about a quarter of the ICEWS test queries have an answer that interacted with the subject only under other relations, which copy mechanisms cannot handle. We proposed \model{}, which adds four intensities and encodes the typed and timed event stream of each entity pair with a Transformer, extended by a path intensity and attention across candidates. \model{} achieves the best MRR and \hone{} on YAGO, WIKI, GDELT and ICEWS18 among the compared methods. The stratified evaluation and the ablation study confirmed that the dyadic components are effective on event data, where the dyad-only stratum exists.
+\para{Summary.} In this paper, we studied which historical evidence a TKG forecasting model should read. A data-only analysis showed that about a quarter of the ICEWS18 test queries have an answer that interacted with the subject only under other relations, which copy mechanisms cannot handle. We proposed \model{}, which adds four intensities and encodes the typed and timed event stream of each entity pair with a Transformer, extended by a path intensity and attention across candidates. \model{} achieves the best MRR and \hone{} on YAGO, WIKI, GDELT and ICEWS18 among the compared methods. The stratified evaluation and the ablation study confirmed that the dyadic components are effective on event data, where the dyad-only stratum exists.
 
-\para{Limitations and future work.} \model{} is weak on queries whose answer has never interacted with the subject, which make up about one third of the ICEWS test queries, and its \hten{} on ICEWS is lower than that of LogCL. In future work, we plan to strengthen the components that score all entities, for example by combining the dyadic evidence with query-specific global graphs or generative decoders, and to extend the stratified evaluation to more baselines under a unified protocol.
+\para{Limitations and future work.} \model{} is weak on queries whose answer has never interacted with the subject, which make up about one third of the ICEWS18 test queries, and its \hten{} on ICEWS18 is lower than that of LogCL. In future work, we plan to strengthen the components that score all entities, for example by combining the dyadic evidence with query-specific global graphs or generative decoders, and to extend the stratified evaluation to more baselines under a unified protocol.
 
 \bibliographystyle{splncs04}
 \bibliography{references}

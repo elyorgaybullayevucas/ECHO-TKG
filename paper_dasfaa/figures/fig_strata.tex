@@ -1,0 +1,28 @@
+% Share of test queries per stratum (diagnose_dyad.py).
+\documentclass[border=2pt]{standalone}
+\usepackage[T1]{fontenc}
+\usepackage{xcolor,pgfplots}
+\pgfplotsset{compat=1.17}
+\definecolor{cDyad}{HTML}{2A6F97}\definecolor{cStruct}{HTML}{4C9A2A}\definecolor{cGrey}{HTML}{6B6B6B}
+\begin{document}
+\begin{tikzpicture}
+  \begin{axis}[
+    xbar stacked, width=8.6cm, height=3.3cm,
+    bar width=8pt, xmin=0, xmax=100,
+    xlabel={share of test queries (\%)}, xlabel style={font=\scriptsize},
+    symbolic y coords={WIKI,YAGO,ICEWS18},
+    ytick=data, y dir=reverse,
+    tick label style={font=\scriptsize},
+    enlarge y limits=0.3,
+    legend style={at={(0.5,1.04)}, anchor=south, legend columns=3, font=\scriptsize, draw=none, column sep=6pt},
+    nodes near coords, nodes near coords style={font=\tiny, color=white},
+    point meta=explicit symbolic,
+    axis line style={cGrey}, tick style={cGrey},
+  ]
+    \addplot[fill=cStruct!80, draw=none] coordinates {(50.6,ICEWS18) [50.6] (92.7,YAGO) [92.7] (86.9,WIKI) [86.9]};
+    \addplot[fill=cDyad, draw=none] coordinates {(23.4,ICEWS18) [23.4] (0.1,YAGO) [] (0.1,WIKI) []};
+    \addplot[fill=cGrey!70, draw=none] coordinates {(26.0,ICEWS18) [26.0] (7.2,YAGO) [7.2] (13.0,WIKI) [13.0]};
+    \legend{recurrent, dyad-only, cold}
+  \end{axis}
+\end{tikzpicture}
+\end{document}

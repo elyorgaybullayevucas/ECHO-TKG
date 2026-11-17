@@ -3,12 +3,6 @@
 \providecommand{\urlprefix}{URL }
 \providecommand{\doi}[1]{https://doi.org/#1}
 
-\bibitem{cai2024diffutkg}
-Cai, Y., Liu, Q., Gan, Y., Li, C., Liu, X., Lin, R., Luo, D., Yang, J.:
-  Predicting the unpredictable: Uncertainty-aware reasoning over temporal
-  knowledge graphs via diffusion process. In: Findings of the Association for
-  Computational Linguistics: ACL 2024. pp. 5766--5778 (2024)
-
 \bibitem{chen2024logcl}
 Chen, W., Wan, H., Wu, Y., Zhao, S., Cheng, J., Li, Y., Lin, Y.: Local-global
   history-aware contrastive learning for temporal knowledge graph reasoning.
@@ -36,11 +30,6 @@ Dong, H., Qiao, Z., Ning, Z., Hao, Q., Du, Y., Wang, P., Zhou, Y.: Disentangled
 Dong, H., Wang, P., Xiao, M., Ning, Z., Wang, P., Zhou, Y.: Temporal inductive
   path neural network for temporal knowledge graph reasoning. Artificial
   Intelligence  (2024), arXiv:2309.03251
-
-\bibitem{nadex2026}
-Gan, Y., He, P., Cai, Y., Lin, R., Zhou, G., Liu, Q.: Negative-aware diffusion
-  process for temporal knowledge graph extrapolation. In: Findings of the
-  Association for Computational Linguistics: EACL 2026 (2026), arXiv:2602.08815
 
 \bibitem{gastinger2024history}
 Gastinger, J., Meilicke, C., Errica, F., Sztyler, T., Schuelke, A.,

@@ -43,7 +43,7 @@ Temporal knowledge graph (TKG) forecasting predicts the missing object of a quer
 \section{Introduction}
 \label{sec:intro}
 
-A temporal knowledge graph (TKG) stores facts as quadruples $(s, r, o, t)$, where a subject $s$ and an object $o$ are connected by a relation $r$ at time $t$. TKG forecasting, also called extrapolation, asks for the object of a query $(s, r, ?, t)$ given only the facts before $t$. It supports applications such as event prediction, crisis early warning and the maintenance of evolving knowledge bases, and it is usually evaluated on political event data (ICEWS, GDELT) and on yearly encyclopedic graphs (YAGO, WIKI). Existing methods fall into several groups: snapshot-based evolution models~\cite{jin2020renet,li2021regcn,li2022cen,dong2025dimnet}, copy mechanisms~\cite{zhu2021cygnet,xu2023cenet}, path- and rule-based reasoners~\cite{han2021xerte,sun2021titer,liu2022tlogic,dong2023daemon,dong2024tipnn}, models with global history graphs~\cite{li2022tirgn,chen2024logcl,chen2025cogntke}, and diffusion models~\cite{cai2024diffutkg}.
+A temporal knowledge graph (TKG) stores facts as quadruples $(s, r, o, t)$, where a subject $s$ and an object $o$ are connected by a relation $r$ at time $t$. TKG forecasting, also called extrapolation, asks for the object of a query $(s, r, ?, t)$ given only the facts before $t$. It supports applications such as event prediction, crisis early warning and the maintenance of evolving knowledge bases, and it is usually evaluated on political event data (ICEWS, GDELT) and on yearly encyclopedic graphs (YAGO, WIKI). Existing methods fall into several groups: snapshot-based evolution models~\cite{jin2020renet,li2021regcn,li2022cen,dong2025dimnet}, copy mechanisms~\cite{zhu2021cygnet,xu2023cenet}, path- and rule-based reasoners~\cite{han2021xerte,sun2021titer,liu2022tlogic,dong2023daemon,dong2024tipnn}, and models with global history graphs~\cite{li2022tirgn,chen2024logcl,chen2025cogntke}.
 
 Several recent studies point out that repetition explains much of the performance on these benchmarks. A recurrency baseline with a few hand-set parameters, which only looks up the objects that appeared with $(s, r)$ before, is competitive with many trained models~\cite{gastinger2024history}, and more than 80\% of the ICEWS test events have occurred earlier~\cite{strikingness2026}. Consequently, the common design of current models is to read the history of the query pair $(s, r)$ as well as possible.
 
@@ -80,7 +80,7 @@ Our contributions are summarized as follows:
 
 \para{Global history, paths and rules.} LogCL~\cite{chen2024logcl} builds a query-related global graph and aligns it with the local view by contrastive learning, and CognTKE~\cite{chen2025cogntke} combines one-hop and multi-hop reasoning. xERTE~\cite{han2021xerte} and TITer~\cite{sun2021titer} search a query-centered subgraph, DaeMon~\cite{dong2023daemon} and TiPNN~\cite{dong2024tipnn} model temporal paths between the subject and the candidates, and TLogic~\cite{liu2022tlogic} mines temporal logical rules. Compared with these methods, \model{} represents the history between the subject and a candidate as an ordered event sequence instead of a graph or a set of rules.
 
-\para{Point processes and diffusion.} Know-Evolve~\cite{trivedi2017knowevolve} and GHNN~\cite{han2020ghnn} model facts with temporal point processes. GHNN notes that assigning a separate process to every possible link is infeasible because of the number of event types. In \model{}, a dyad is instantiated only if it has history, which keeps the number of sequences per query small. DiffuTKG~\cite{cai2024diffutkg} formulates forecasting as a conditional denoising process.
+\para{Point processes.} Know-Evolve~\cite{trivedi2017knowevolve} and GHNN~\cite{han2020ghnn} model facts with temporal point processes. GHNN notes that assigning a separate process to every possible link is infeasible because of the number of event types. In \model{}, a dyad is instantiated only if it has history, which keeps the number of sequences per query small.
 
 \para{Evaluation.} Gastinger et al.~\cite{gastinger2023apples} report that differences in filtering, dataset versions and prediction settings change results by several points. Other studies observe that aggregate metrics are dominated by repeated facts~\cite{gastinger2024history,zhang2026evolution,strikingness2026}. This motivates the stratified evaluation used in this paper.
 
@@ -276,7 +276,7 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
   \end{tabular}
 \end{table}
 
-\para{Baselines.} We compare with CyGNet~\cite{zhu2021cygnet}, xERTE~\cite{han2021xerte}, TITer~\cite{sun2021titer}, RE-GCN~\cite{li2021regcn}, CEN~\cite{li2022cen}, TiRGN~\cite{li2022tirgn}, DaeMon~\cite{dong2023daemon}, TiPNN~\cite{dong2024tipnn}, DiMNet~\cite{dong2025dimnet}, CognTKE~\cite{chen2025cogntke}, LogCL~\cite{chen2024logcl} and DiffuTKG~\cite{cai2024diffutkg}, as well as the recurrency baseline~\cite{gastinger2024history} and CountTRuCoLa~\cite{gastinger2026counttrucola}. Baseline results are taken from the original papers or from the result tables of DaeMon~\cite{dong2023daemon}, CEN~\cite{li2022cen} and DiMNet~\cite{dong2025dimnet}; the DiffuTKG results on these dataset versions are those reported in~\cite{nadex2026}. A dash means that no result under the same dataset version is reported. We also ran LogCL with our evaluation code on ICEWS18 and obtained 36.0 MRR, which agrees with its reported 35.67.
+\para{Baselines.} We compare with CyGNet~\cite{zhu2021cygnet}, xERTE~\cite{han2021xerte}, TITer~\cite{sun2021titer}, RE-GCN~\cite{li2021regcn}, CEN~\cite{li2022cen}, TiRGN~\cite{li2022tirgn}, DaeMon~\cite{dong2023daemon}, TiPNN~\cite{dong2024tipnn}, DiMNet~\cite{dong2025dimnet}, CognTKE~\cite{chen2025cogntke} and LogCL~\cite{chen2024logcl}, as well as the recurrency baseline~\cite{gastinger2024history} and CountTRuCoLa~\cite{gastinger2026counttrucola}. Baseline results are taken from the original papers or from the result tables of DaeMon~\cite{dong2023daemon}, CEN~\cite{li2022cen} and DiMNet~\cite{dong2025dimnet}. A dash means that no result under the same dataset version is reported. We also ran LogCL with our evaluation code on ICEWS18 and obtained 36.0 MRR, which agrees with its reported 35.67.
 
 \para{Evaluation metrics.} We report MRR and Hits@$k$ (\hone{}, \hten{}) in percent under the time-aware filtered setting~\cite{gastinger2023apples}, in which only the other true objects of $(s, r)$ at the query time are removed from the ranking. If several entities have the same score as the answer, the average rank is used.
 
@@ -308,10 +308,9 @@ where $o^\star_q$ is the answer of query $q$ and $\alpha$ is a weight.
     CountTRuCoLa~\cite{gastinger2026counttrucola} & 32.8 & -- & -- & -- & -- & -- & 23.8 & -- & -- \\
     DiMNet~\cite{dong2025dimnet} & 34.13 & 23.29 & 55.80 & -- & -- & -- & 21.93 & 14.03 & 37.49 \\
     CognTKE~\cite{chen2025cogntke} & 35.24 & -- & -- & -- & -- & -- & -- & -- & -- \\
-    LogCL~\cite{chen2024logcl} & \underline{35.67} & 24.53 & \underline{57.74} & \textbf{48.87} & \textbf{37.76} & \textbf{70.26} & 23.75 & \underline{14.64} & \underline{42.33} \\
-    DiffuTKG~\cite{cai2024diffutkg} & 35.65 & \textbf{27.19} & \textbf{59.55} & \underline{47.58} & 36.38 & 66.01 & 21.87 & 14.43 & 36.05 \\
+    LogCL~\cite{chen2024logcl} & \underline{35.67} & \underline{24.53} & \textbf{57.74} & \textbf{48.87} & \textbf{37.76} & \textbf{70.26} & 23.75 & \underline{14.64} & \underline{42.33} \\
     \midrule
-    \model{} & \textbf{36.54} & \underline{26.36} & 56.21 & 47.43 & \underline{37.49} & \underline{66.16} & \textbf{27.10} & \textbf{18.16} & \textbf{44.62} \\
+    \model{} & \textbf{36.54} & \textbf{26.36} & \underline{56.21} & \underline{47.43} & \underline{37.49} & \underline{66.16} & \textbf{27.10} & \textbf{18.16} & \textbf{44.62} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -348,7 +347,7 @@ Tables~\ref{tab:main} and~\ref{tab:yearly} report the comparison. We make the fo
 
 (2) On YAGO and WIKI, \model{} obtains the best MRR and \hone{}. Compared with DaeMon, \hone{} increases by 0.54 on YAGO and 2.18 on WIKI, while DaeMon is slightly better on \hten{}. The standard deviations of MRR over three seeds are 0.20 and 0.12, respectively.
 
-(3) On ICEWS18, \model{} obtains the best MRR, about 0.9 points above LogCL and DiffuTKG, and the second best \hone{}; DiffuTKG is better on \hone{} and \hten{}. On ICEWS14s, \model{} is behind LogCL and comparable to DiffuTKG. On both datasets \model{} is weaker on \hten{} than on MRR. As the next subsection shows, this is related to the cold strata, where the answer has no interaction history with the subject and the dyadic and path intensities have little or no input.
+(3) On ICEWS18, \model{} obtains the best MRR and \hone{}, 0.87 and 1.83 points above LogCL, while LogCL is better on \hten{} (57.74 vs.\ 56.21). On ICEWS14s, \model{} is second to LogCL on all three metrics. On both datasets \model{} is weaker on \hten{} than on MRR. As the next subsection shows, this is related to the cold strata, where the answer has no interaction history with the subject and the dyadic and path intensities have little or no input.
 
 \subsection{Stratified Evaluation}
 
@@ -429,9 +428,9 @@ Table~\ref{tab:ablation} shows the effect of removing one component at a time on
 \section{Conclusion}
 \label{sec:conclusion}
 
-\para{Summary.} In this paper, we studied which historical evidence a TKG forecasting model should read. A data-only analysis showed that about a quarter of the ICEWS test queries have an answer that interacted with the subject only under other relations, which copy mechanisms cannot handle. We proposed \model{}, which adds four intensities and encodes the typed and timed event stream of each entity pair with a Transformer, extended by a path intensity and attention across candidates. \model{} achieves the best MRR and \hone{} on YAGO, WIKI and GDELT and the best MRR on ICEWS18 among the compared methods. The stratified evaluation and the ablation study confirmed that the dyadic components are effective on event data, where the dyad-only stratum exists.
+\para{Summary.} In this paper, we studied which historical evidence a TKG forecasting model should read. A data-only analysis showed that about a quarter of the ICEWS test queries have an answer that interacted with the subject only under other relations, which copy mechanisms cannot handle. We proposed \model{}, which adds four intensities and encodes the typed and timed event stream of each entity pair with a Transformer, extended by a path intensity and attention across candidates. \model{} achieves the best MRR and \hone{} on YAGO, WIKI, GDELT and ICEWS18 among the compared methods. The stratified evaluation and the ablation study confirmed that the dyadic components are effective on event data, where the dyad-only stratum exists.
 
-\para{Limitations and future work.} \model{} is weak on queries whose answer has never interacted with the subject, which make up about one third of the ICEWS test queries, and its \hten{} on ICEWS is lower than that of LogCL and, on ICEWS18, DiffuTKG. In future work, we plan to strengthen the components that score all entities, for example by combining the dyadic evidence with query-specific global graphs or generative decoders, and to extend the stratified evaluation to more baselines under a unified protocol.
+\para{Limitations and future work.} \model{} is weak on queries whose answer has never interacted with the subject, which make up about one third of the ICEWS test queries, and its \hten{} on ICEWS is lower than that of LogCL. In future work, we plan to strengthen the components that score all entities, for example by combining the dyadic evidence with query-specific global graphs or generative decoders, and to extend the stratified evaluation to more baselines under a unified protocol.
 
 \bibliographystyle{splncs04}
 \bibliography{references}
